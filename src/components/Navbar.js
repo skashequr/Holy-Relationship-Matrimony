@@ -69,7 +69,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link
@@ -81,6 +81,16 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-1">
+              <Link
+                href="/search"
+                className="flex items-center gap-2 px-4 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg text-sm font-medium transition-all duration-200"
+              >
+                <FaSearch />
+                বায়োডাটা খুঁজুন
+              </Link>
             </div>
           )}
 
@@ -191,21 +201,19 @@ export default function Navbar() {
             )}
 
             {/* Mobile menu button */}
-            {isAuthenticated && (
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
-              >
-                {menuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
-              </button>
-            )}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
+            >
+              {menuOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
+            </button>
           </div>
         </div>
 
         {/* Mobile menu */}
-        {menuOpen && isAuthenticated && (
+        {menuOpen && (
           <div className="md:hidden py-3 border-t border-white/10 animate-fade-in">
-            {navLinks.map((link) => (
+            {(isAuthenticated ? navLinks : [{ href: '/search', label: 'বায়োডাটা খুঁজুন', icon: <FaSearch /> }]).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

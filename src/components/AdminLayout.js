@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PageLoader } from './LoadingSpinner';
 import {
   FaChartBar, FaUsers, FaFileAlt, FaCreditCard,
-  FaFlag, FaCog, FaSignOutAlt, FaHome, FaBell, FaCrown, FaHeart, FaStar
+  FaFlag, FaCog, FaSignOutAlt, FaHome, FaBell, FaCrown, FaHeart, FaStar, FaMoon, FaGift
 } from 'react-icons/fa';
 
 const adminLinks = [
@@ -18,6 +18,9 @@ const adminLinks = [
   { href: '/admin/premium', label: 'প্রিমিয়াম', icon: <FaCrown size={15} /> },
   { href: '/admin/married', label: 'বিবাহিত', icon: <FaHeart size={15} /> },
   { href: '/admin/reviews', label: 'রিভিউ', icon: <FaStar size={15} /> },
+  { href: '/admin/notifications', label: 'নোটিফিকেশন', icon: <FaBell size={15} /> },
+  { href: '/admin/ruqyah', label: 'রুকাইয়া', icon: <FaMoon size={15} /> },
+  { href: '/admin/referrals', label: 'রেফারেল', icon: <FaGift size={15} /> },
   { href: '/admin/reports', label: 'অভিযোগ', icon: <FaFlag size={15} /> },
   { href: '/admin/settings', label: 'সেটিংস', icon: <FaCog size={15} /> },
 ];

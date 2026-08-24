@@ -6,7 +6,9 @@ import AdminLayout from '@/components/AdminLayout';
 import { adminAPI } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { FaBan, FaCheckCircle, FaSearch, FaSpinner, FaShieldAlt } from 'react-icons/fa';
+import { FaBan, FaCheckCircle, FaSearch, FaSpinner, FaShieldAlt, FaEye, FaCamera } from 'react-icons/fa';
+import BiodataDetailModal from '@/components/BiodataDetailModal';
+import { biodataAPI } from '@/lib/api';
 import { useDebounce } from '@/lib/hooks';
 
 export default function AdminUsersPage() {
@@ -23,6 +25,8 @@ export default function AdminUsersPage() {
   const [actionLoading, setActionLoading] = useState({});
   const [banModal, setBanModal] = useState(null);
   const [banReason, setBanReason] = useState('');
+  const [viewBiodata, setViewBiodata] = useState(null);
+  const [biodataLoading, setBiodataLoading] = useState(null);
   const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => { fetchUsers(1); }, [debouncedSearch, filterGender, filterStatus, filterAgeMin, filterAgeMax]);
@@ -67,6 +71,15 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.map((u) => u._id === id ? { ...u, isBanned: false } : u));
     } catch { toast.error('সমস্যা হয়েছে।'); }
     finally { setActionLoading((p) => ({ ...p, [id]: null })); }
+  };
+
+  const handleViewBiodata = async (biodataId) => {
+    setBiodataLoading(biodataId);
+    try {
+      const { data } = await biodataAPI.getById(biodataId);
+      setViewBiodata(data.biodata);
+    } catch { toast.error('বায়োডেটা লোড করা যায়নি।'); }
+    finally { setBiodataLoading(null); }
   };
 
   const handleVerify = async (id) => {
@@ -163,7 +176,8 @@ export default function AdminUsersPage() {
                           <div>
                             <p className="text-sm font-semibold text-gray-800 flex items-center gap-1">
                               {u.name}
-                              {u.verificationBadge && <FaCheckCircle size={11} className="text-green-500" />}
+                              {u.isFaceVerified && <FaCamera size={10} className="text-blue-500" title="ফেস যাচাই করা" />}
+                              {u.verificationBadge && <FaCheckCircle size={11} className="text-green-500" title={u.isFaceVerified ? 'ফেস যাচাই' : 'অ্যাডমিন যাচাই'} />}
                             </p>
                             <p className="text-xs text-gray-400 truncate max-w-[150px]">{u.email}</p>
                           </div>
@@ -173,13 +187,23 @@ export default function AdminUsersPage() {
                       <td className="table-cell text-center text-xs text-gray-600">{u.phone || '-'}</td>
                       <td className="table-cell text-center">
                         {u.biodataId ? (
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                            u.biodataId.status === 'approved' ? 'bg-green-100 text-green-700' :
-                            u.biodataId.status === 'rejected' ? 'bg-red-100 text-red-600' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {u.biodataId.status === 'approved' ? '✓' : u.biodataId.status === 'rejected' ? '✗' : '⏳'}
-                          </span>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              u.biodataId.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              u.biodataId.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {u.biodataId.status === 'approved' ? '✓' : u.biodataId.status === 'rejected' ? '✗' : '⏳'}
+                            </span>
+                            <button
+                              onClick={() => handleViewBiodata(u.biodataId._id)}
+                              disabled={biodataLoading === u.biodataId._id}
+                              className="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded flex items-center justify-center text-gray-500 transition-colors"
+                              title="বায়োডেটা দেখুন"
+                            >
+                              {biodataLoading === u.biodataId._id ? <FaSpinner size={10} className="animate-spin" /> : <FaEye size={10} />}
+                            </button>
+                          </div>
                         ) : <span className="text-xs text-gray-400">নেই</span>}
                       </td>
                       <td className="table-cell text-center">
@@ -227,6 +251,9 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      {/* Biodata Detail Modal */}
+      {viewBiodata && <BiodataDetailModal biodata={viewBiodata} onClose={() => setViewBiodata(null)} />}
 
       {/* Ban Modal */}
       {banModal && (

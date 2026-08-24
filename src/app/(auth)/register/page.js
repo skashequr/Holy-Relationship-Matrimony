@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const searchParams = useSearchParams();
   const defaultGender = searchParams.get('gender') || 'male';
+  const refCode = searchParams.get('ref') || '';
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,7 @@ export default function RegisterPage() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      await registerUser({ ...data, gender: selectedGender });
+      await registerUser({ ...data, gender: selectedGender, referralCode: refCode || undefined });
     } catch (error) {
       toast.error(error.response?.data?.message || error.response?.data?.errors?.[0]?.msg || 'নিবন্ধন ব্যর্থ হয়েছে।');
     } finally {
@@ -56,6 +57,12 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+            {/* Referral badge */}
+            {refCode && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 flex items-center gap-2 text-sm text-green-700">
+                🎁 <span>রেফারেল কোড <strong>{refCode}</strong> দিয়ে নিবন্ধন করছেন</span>
+              </div>
+            )}
             {/* Gender Selection */}
             <div>
               <label className="label">আপনি কে? *</label>

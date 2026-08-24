@@ -29,6 +29,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="bn">
       <body className={inter.variable}>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2113556573683821"
+     crossorigin="anonymous"></script>
         <LanguageProvider>
           <AuthProvider>
             {children}

@@ -2,14 +2,18 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
-const apiBaseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const normalizeApiUrl = (url) => url.replace(/\/+$|\/+$/g, '');
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const normalizedApiUrl = normalizeApiUrl(rawApiUrl).endsWith('/api')
+  ? normalizeApiUrl(rawApiUrl)
+  : `${normalizeApiUrl(rawApiUrl)}/api`;
 
 if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_API_URL) {
   throw new Error('NEXT_PUBLIC_API_URL must be set in production');
 }
 
 const api = axios.create({
-  baseURL: apiBaseURL,
+  baseURL: normalizedApiUrl,
   timeout: 30000,
   withCredentials: true,
   headers: {
@@ -130,6 +134,8 @@ export const userAPI = {
   markAllRead: () => api.put('/user/notifications/read-all'),
   markRead: (id) => api.put(`/user/notifications/${id}/read`),
   deactivateAccount: () => api.delete('/user/account'),
+  submitFaceVerification: (formData) =>
+    api.post('/user/face-verify', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // Admin API
@@ -140,6 +146,7 @@ export const adminAPI = {
   unbanUser: (id) => api.put(`/admin/users/${id}/unban`),
   verifyUser: (id) => api.put(`/admin/users/${id}/verify`),
   getBiodatas: (params) => api.get('/admin/biodatas', { params }),
+  getBiodata: (id) => api.get(`/admin/biodatas/${id}`),
   approveBiodata: (id) => api.put(`/admin/biodatas/${id}/approve`),
   rejectBiodata: (id, reason) => api.put(`/admin/biodatas/${id}/reject`, { reason }),
   getPayments: (params) => api.get('/admin/payments', { params }),
@@ -159,9 +166,27 @@ export const adminAPI = {
   getReviews: (params) => api.get('/admin/reviews', { params }),
   approveReview: (id) => api.patch(`/admin/reviews/${id}/approve`),
   deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
+  // Notifications
+  sendBroadcastNotification: (data) => api.post('/admin/notifications/broadcast', data),
+  // Email campaigns
+  sendNoBiodataEmail: () => api.post('/admin/email/no-biodata'),
+  sendCustomEmail: (data) => api.post('/admin/email/custom', data),
   // Settings
   getSettings: () => api.get('/admin/settings'),
   updateSettings: (data) => api.put('/admin/settings', data),
+  // Referral management
+  getReferrals: (params) => api.get('/admin/referrals', { params }),
+  getReferralLeaderboard: () => api.get('/admin/referrals/leaderboard'),
+  // Ruqyah management
+  getRuqyahSlots: () => api.get('/admin/ruqyah/slots'),
+  createRuqyahSlot: (data) => api.post('/admin/ruqyah/slots', data),
+  deleteRuqyahSlot: (id) => api.delete(`/admin/ruqyah/slots/${id}`),
+  toggleRuqyahSlot: (id) => api.patch(`/admin/ruqyah/slots/${id}/toggle`),
+  getRuqyahBookings: (params) => api.get('/admin/ruqyah/bookings', { params }),
+  confirmRuqyahBooking: (id) => api.patch(`/admin/ruqyah/bookings/${id}/confirm`),
+  cancelRuqyahBooking: (id) => api.patch(`/admin/ruqyah/bookings/${id}/cancel`),
+  updateRuqyahPayment: (id, paymentStatus) => api.patch(`/admin/ruqyah/bookings/${id}/payment`, { paymentStatus }),
+  addRuqyahNote: (id, adminNote) => api.patch(`/admin/ruqyah/bookings/${id}/note`, { adminNote }),
 };
 
 // Interest API
@@ -179,6 +204,21 @@ export const messageAPI = {
   getMessages: (conversationId, params) => api.get(`/messages/${conversationId}`, { params }),
   sendMessage: (data) => api.post('/messages', data),
   startConversation: (userId) => api.post('/messages/start', { userId }),
+};
+
+// Referral API
+export const referralAPI = {
+  getMe: () => api.get('/referral/me'),
+  getList: () => api.get('/referral/list'),
+  checkUnlock: (biodataId) => api.get(`/referral/check/${biodataId}`),
+  unlock: (biodataId) => api.post(`/referral/unlock/${biodataId}`),
+};
+
+// Ruqyah API
+export const ruqyahAPI = {
+  getSlots: () => api.get('/ruqyah/slots'),
+  book: (data) => api.post('/ruqyah/book', data),
+  getMyBookings: () => api.get('/ruqyah/my-bookings'),
 };
 
 // Review API

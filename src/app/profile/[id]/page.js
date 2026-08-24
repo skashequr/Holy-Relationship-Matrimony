@@ -8,7 +8,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import PaymentModal from '@/components/PaymentModal';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
-import { biodataAPI, interestAPI, messageAPI } from '@/lib/api';
+import { biodataAPI, interestAPI, messageAPI, referralAPI } from '@/lib/api';
 import {
   formatAge, formatHeight, formatDate, educationLabels,
   professionLabels, maritalStatusLabels, incomeLabels,
@@ -53,6 +53,9 @@ export default function ProfileDetailPage() {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [pointUnlocking, setPointUnlocking] = useState(false);
+  const [pointUnlocked, setPointUnlocked] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
   const [interestSent, setInterestSent] = useState(false);
   const [sendingInterest, setSendingInterest] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
@@ -61,6 +64,9 @@ export default function ProfileDetailPage() {
 
   useEffect(() => {
     fetchBiodata();
+    // Load point unlock status + user points
+    referralAPI.getMe().then((r) => setUserPoints(r.data?.points || 0)).catch(() => {});
+    referralAPI.checkUnlock(id).then((r) => setPointUnlocked(r.data?.isUnlocked || false)).catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -138,6 +144,25 @@ export default function ProfileDetailPage() {
       toast.success(data.isShortlisted ? 'শর্টলিস্টে যোগ করা হয়েছে' : 'শর্টলিস্ট থেকে সরানো হয়েছে');
     } catch {
       toast.error('সমস্যা হয়েছে।');
+    }
+  };
+
+  const handlePointUnlock = async () => {
+    if (userPoints < 100) {
+      toast.error(`১০০ পয়েন্ট দরকার। আপনার কাছে ${userPoints} পয়েন্ট আছে।`);
+      return;
+    }
+    setPointUnlocking(true);
+    try {
+      await referralAPI.unlock(id);
+      setPointUnlocked(true);
+      setUserPoints((p) => p - 100);
+      toast.success('বায়োডেটা আনলক হয়েছে!');
+      await refreshUser?.();
+    } catch (err) {
+      toast.error(err.response?.data?.messageBn || 'আনলক করা যায়নি।');
+    } finally {
+      setPointUnlocking(false);
     }
   };
 
@@ -403,7 +428,7 @@ export default function ProfileDetailPage() {
                 <FaPhone className="text-[#1a5276]" /> যোগাযোগের তথ্য
               </h3>
 
-              {hasUnlockedContact ? (
+              {(hasUnlockedContact || pointUnlocked) ? (
                 <div className="space-y-3">
                   <div className="bg-green-50 border border-green-200 rounded-xl p-3">
                     <p className="text-xs text-green-600 font-semibold flex items-center gap-1 mb-2">
@@ -438,18 +463,53 @@ export default function ProfileDetailPage() {
                   </div>
                 </div>
               ) : (
-                <div>
-                  <div className="bg-gray-50 rounded-xl p-4 text-center mb-4">
-                    <FaLock className="mx-auto text-gray-300 mb-2" size={28} />
+                <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-xl p-4 text-center">
+                    <FaLock className="mx-auto text-gray-300 mb-2" size={24} />
                     <p className="text-xs text-gray-500">যোগাযোগের তথ্য লক করা আছে।</p>
-                    <p className="text-xs text-gray-400 mt-1">মাত্র ৫০ টাকায় আনলক করুন।</p>
                   </div>
+                  {/* Pay to unlock */}
                   <button
                     onClick={() => setShowPayment(true)}
-                    className="w-full btn-gold py-3 rounded-xl flex items-center justify-center gap-2"
+                    className="w-full btn-gold py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm"
                   >
-                    <FaLock size={13} /> ৫০ টাকায় আনলক করুন
+                    <FaLock size={12} /> ৫০ টাকায় আনলক করুন
                   </button>
+                  {/* Divider */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-xs text-gray-400 font-semibold">অথবা</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+                  {/* Point unlock */}
+                  <button
+                    onClick={handlePointUnlock}
+                    disabled={pointUnlocking || userPoints < 100}
+                    className={`w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold border-2 transition-all ${
+                      userPoints >= 100
+                        ? 'border-[#1a5276] text-[#1a5276] hover:bg-[#1a5276] hover:text-white'
+                        : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    } disabled:opacity-60`}
+                  >
+                    {pointUnlocking ? (
+                      <FaSpinner size={12} className="animate-spin" />
+                    ) : (
+                      <span className="text-base">⭐</span>
+                    )}
+                    ১০০ পয়েন্টে আনলক করুন
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ml-1 ${
+                      userPoints >= 100 ? 'bg-[#1a5276]/10 text-[#1a5276]' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {userPoints} পয়েন্ট
+                    </span>
+                  </button>
+                  {userPoints < 100 && (
+                    <p className="text-center text-xs text-gray-400">
+                      <Link href="/referral" className="text-[#1a5276] font-semibold hover:underline">
+                        রেফারেল করে পয়েন্ট উপার্জন করুন →
+                      </Link>
+                    </p>
+                  )}
                 </div>
               )}
             </div>

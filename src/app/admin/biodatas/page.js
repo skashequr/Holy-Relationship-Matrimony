@@ -8,6 +8,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { educationLabels, professionLabels } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { FaCheck, FaTimes, FaEye, FaSearch, FaSpinner } from 'react-icons/fa';
+import BiodataDetailModal from '@/components/BiodataDetailModal';
 
 const statusBadge = {
   approved: 'badge-verified',
@@ -29,6 +30,7 @@ export default function AdminBiodatasPage() {
   const [actionLoading, setActionLoading] = useState({});
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [viewModal, setViewModal] = useState(null);
 
   useEffect(() => { fetchBiodatas(1); }, [filterStatus, filterGender, filterAgeMin, filterAgeMax]);
 
@@ -170,9 +172,9 @@ export default function AdminBiodatasPage() {
                       </td>
                       <td className="table-cell">
                         <div className="flex items-center gap-2 justify-center">
-                          <a href={`/profile/${b._id}`} target="_blank" className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-gray-600 transition-colors" title="দেখুন">
+                          <button onClick={() => setViewModal(b)} className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center text-gray-600 transition-colors" title="বিস্তারিত দেখুন">
                             <FaEye size={12} />
-                          </a>
+                          </button>
                           {b.status !== 'approved' && (
                             <button
                               onClick={() => handleApprove(b._id)}
@@ -216,6 +218,9 @@ export default function AdminBiodatasPage() {
           </div>
         )}
       </div>
+
+      {/* Biodata Detail Modal */}
+      {viewModal && <BiodataDetailModal biodata={viewModal} onClose={() => setViewModal(null)} />}
 
       {/* Reject Modal */}
       {rejectModal && (

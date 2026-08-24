@@ -1,33 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import {
-  FaShieldAlt,
-  FaUserLock,
-  FaDatabase,
-  FaEye,
-  FaCookieBite,
-  FaShareAlt,
-  FaChild,
-  FaEdit,
-  FaEnvelope,
-  FaCheckCircle,
-  FaLock,
-  FaGlobe,
-  FaBell,
-  FaTrash,
-  FaChevronRight,
+  FaShieldAlt, FaUserLock, FaDatabase, FaEye,
+  FaCookieBite, FaShareAlt, FaChild, FaBell,
+  FaEnvelope, FaCheckCircle, FaLock, FaGlobe, FaArrowUp,
 } from 'react-icons/fa';
+import { MdVerified, MdSecurity, MdPrivacyTip } from 'react-icons/md';
+
+/* ── Islamic geometric SVG background ─────────────────────────── */
+const IslamicBg = ({ opacity = 0.06 }) => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity }} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="ip" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+        <polygon points="40,3 77,22 77,58 40,77 3,58 3,22" fill="none" stroke="white" strokeWidth="0.8"/>
+        <polygon points="40,18 62,30 62,50 40,62 18,50 18,30" fill="none" stroke="white" strokeWidth="0.4"/>
+        <circle cx="40" cy="40" r="4" fill="none" stroke="white" strokeWidth="0.4"/>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#ip)"/>
+  </svg>
+);
 
 const sections = [
   {
     id: 'collection',
     icon: FaDatabase,
-    color: 'from-blue-500 to-[#1a5276]',
+    gradient: 'from-blue-600 to-[#1a5276]',
+    lightBg: 'from-blue-50 to-blue-50/30',
+    accentColor: 'text-blue-600',
+    badgeColor: 'bg-blue-100 text-blue-700',
     title: 'তথ্য সংগ্রহ',
+    subtitle: 'আমরা কী কী তথ্য সংগ্রহ করি',
     content: [
       {
         subtitle: 'আপনি যা প্রদান করেন',
@@ -47,8 +54,12 @@ const sections = [
   {
     id: 'usage',
     icon: FaEye,
-    color: 'from-[#c9a84c] to-amber-600',
+    gradient: 'from-amber-500 to-[#c9a84c]',
+    lightBg: 'from-amber-50 to-amber-50/30',
+    accentColor: 'text-amber-600',
+    badgeColor: 'bg-amber-100 text-amber-700',
     title: 'তথ্য ব্যবহার',
+    subtitle: 'আপনার তথ্য কীভাবে ব্যবহার হয়',
     content: [
       {
         subtitle: 'সেবা প্রদানে',
@@ -72,8 +83,12 @@ const sections = [
   {
     id: 'protection',
     icon: FaLock,
-    color: 'from-green-500 to-emerald-700',
+    gradient: 'from-emerald-600 to-[#1b6a3b]',
+    lightBg: 'from-emerald-50 to-emerald-50/30',
+    accentColor: 'text-emerald-600',
+    badgeColor: 'bg-emerald-100 text-emerald-700',
     title: 'তথ্য সুরক্ষা',
+    subtitle: 'আমরা কীভাবে আপনার ডেটা রক্ষা করি',
     content: [
       {
         subtitle: 'এনক্রিপশন',
@@ -93,8 +108,12 @@ const sections = [
   {
     id: 'sharing',
     icon: FaShareAlt,
-    color: 'from-purple-500 to-violet-700',
+    gradient: 'from-violet-600 to-purple-700',
+    lightBg: 'from-violet-50 to-violet-50/30',
+    accentColor: 'text-violet-600',
+    badgeColor: 'bg-violet-100 text-violet-700',
     title: 'তথ্য শেয়ারিং',
+    subtitle: 'তথ্য কার সাথে শেয়ার হয়',
     content: [
       {
         subtitle: 'অন্য সদস্যদের সাথে',
@@ -118,8 +137,12 @@ const sections = [
   {
     id: 'cookies',
     icon: FaCookieBite,
-    color: 'from-orange-400 to-red-500',
+    gradient: 'from-orange-500 to-red-500',
+    lightBg: 'from-orange-50 to-orange-50/30',
+    accentColor: 'text-orange-600',
+    badgeColor: 'bg-orange-100 text-orange-700',
     title: 'কুকি নীতি',
+    subtitle: 'কুকি কী এবং কীভাবে ব্যবহার হয়',
     content: [
       {
         subtitle: 'কুকি কী এবং কেন ব্যবহার করি',
@@ -139,8 +162,12 @@ const sections = [
   {
     id: 'rights',
     icon: FaUserLock,
-    color: 'from-[#1a5276] to-cyan-600',
+    gradient: 'from-[#1a5276] to-cyan-700',
+    lightBg: 'from-cyan-50 to-cyan-50/30',
+    accentColor: 'text-cyan-700',
+    badgeColor: 'bg-cyan-100 text-cyan-700',
     title: 'আপনার অধিকার',
+    subtitle: 'আপনি যা যা করতে পারবেন',
     content: [
       {
         subtitle: 'তথ্য দেখার ও সম্পাদনার অধিকার',
@@ -164,8 +191,12 @@ const sections = [
   {
     id: 'children',
     icon: FaChild,
-    color: 'from-pink-400 to-rose-600',
+    gradient: 'from-rose-500 to-pink-600',
+    lightBg: 'from-rose-50 to-rose-50/30',
+    accentColor: 'text-rose-600',
+    badgeColor: 'bg-rose-100 text-rose-700',
     title: 'অপ্রাপ্তবয়স্কদের সুরক্ষা',
+    subtitle: 'শিশু ও কিশোরদের নিরাপত্তা',
     content: [
       {
         subtitle: 'বয়স সীমা',
@@ -181,8 +212,12 @@ const sections = [
   {
     id: 'updates',
     icon: FaBell,
-    color: 'from-teal-500 to-[#1a5276]',
+    gradient: 'from-teal-600 to-[#1b6a3b]',
+    lightBg: 'from-teal-50 to-teal-50/30',
+    accentColor: 'text-teal-700',
+    badgeColor: 'bg-teal-100 text-teal-700',
     title: 'নীতি পরিবর্তন',
+    subtitle: 'কীভাবে আপডেট জানানো হবে',
     content: [
       {
         subtitle: 'আপডেটের বিজ্ঞপ্তি',
@@ -190,7 +225,7 @@ const sections = [
       },
       {
         subtitle: 'ব্যবহার অব্যাহত রাখা',
-        text: 'নতুন নীতি প্রকাশের পর সেবা ব্যবহার অব্যাহত রাখলে ধরে নেওয়া হবে যে আপনি পরিবর্তিত নীতি স্বীকার করেছেন। আপনি যদি নতুন নীতির সাথে একমত না হন, তাহলে আপনার অ্যাকাউন্ট বন্ধ করে দিন।',
+        text: 'নতুন নীতি প্রকাশের পর সেবা ব্যবহার অব্যাহত রাখলে ধরে নেওয়া হবে যে আপনি পরিবর্তিত নীতি স্বীকার করেছেন।',
       },
     ],
     highlights: [
@@ -201,247 +236,355 @@ const sections = [
   },
 ];
 
-const tableOfContents = [
-  { id: 'collection', label: 'তথ্য সংগ্রহ' },
-  { id: 'usage', label: 'তথ্য ব্যবহার' },
-  { id: 'protection', label: 'তথ্য সুরক্ষা' },
-  { id: 'sharing', label: 'তথ্য শেয়ারিং' },
-  { id: 'cookies', label: 'কুকি নীতি' },
-  { id: 'rights', label: 'আপনার অধিকার' },
-  { id: 'children', label: 'অপ্রাপ্তবয়স্কদের সুরক্ষা' },
-  { id: 'updates', label: 'নীতি পরিবর্তন' },
-];
-
-function scrollTo(id) {
-  const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+/* ── Scroll progress bar ───────────────────────────────────────── */
+function ScrollProgress() {
+  const [pct, setPct] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.documentElement;
+      setPct((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return (
+    <div className="fixed top-0 left-0 z-50 h-1 bg-gradient-to-r from-[#1a5276] via-[#c9a84c] to-[#1b6a3b] transition-all duration-100"
+      style={{ width: `${pct}%` }} />
+  );
 }
 
+/* ── Back to top button ────────────────────────────────────────── */
+function BackToTop() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const h = () => setShow(window.scrollY > 400);
+    window.addEventListener('scroll', h, { passive: true });
+    return () => window.removeEventListener('scroll', h);
+  }, []);
+  if (!show) return null;
+  return (
+    <button
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className="fixed bottom-6 right-6 z-40 w-11 h-11 bg-[#1a5276] hover:bg-[#0c3a5e] text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+    >
+      <FaArrowUp size={14} />
+    </button>
+  );
+}
+
+/* ── Section card ──────────────────────────────────────────────── */
+function SectionCard({ section, index }) {
+  const Icon = section.icon;
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      id={section.id}
+      className={`scroll-mt-24 transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+      style={{ transitionDelay: `${index * 60}ms` }}
+    >
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+
+        {/* Gradient header */}
+        <div className={`bg-gradient-to-r ${section.gradient} p-6 relative overflow-hidden`}>
+          <div className="absolute inset-0 opacity-10">
+            <svg width="100%" height="100%"><defs><pattern id={`ph${index}`} width="40" height="40" patternUnits="userSpaceOnUse"><polygon points="20,2 38,11 38,29 20,38 2,29 2,11" fill="none" stroke="white" strokeWidth="0.6"/></pattern></defs><rect width="100%" height="100%" fill={`url(#ph${index})`}/></svg>
+          </div>
+          <div className="relative flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30 flex-shrink-0">
+              <Icon size={20} className="text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-white/40 text-xs font-mono font-bold">
+                  {String(index + 1).padStart(2, '০')}
+                </span>
+                <h2 className="text-white font-bold text-lg leading-tight">{section.title}</h2>
+              </div>
+              <p className="text-white/70 text-xs">{section.subtitle}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="space-y-5 mb-6">
+            {section.content.map((block, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="mt-1 flex-shrink-0">
+                  <div className={`w-6 h-6 rounded-lg ${section.badgeColor} flex items-center justify-center`}>
+                    <span className="text-[10px] font-black">{i + 1}</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className={`font-bold text-sm mb-1.5 ${section.accentColor}`}>{block.subtitle}</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">{block.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Highlights */}
+          <div className={`bg-gradient-to-br ${section.lightBg} rounded-2xl p-4 border border-gray-100`}>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">মূল বিষয়সমূহ</p>
+            <ul className="space-y-2.5">
+              {section.highlights.map((h, idx) => (
+                <li key={idx} className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FaCheckCircle size={10} className="text-green-600" />
+                  </div>
+                  <span className="text-sm text-gray-700 leading-snug">{h}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
 export default function PrivacyPolicyPage() {
   const [activeSection, setActiveSection] = useState('collection');
 
+  /* Update active section on scroll */
+  useEffect(() => {
+    const onScroll = () => {
+      for (const s of [...sections].reverse()) {
+        const el = document.getElementById(s.id);
+        if (el && el.getBoundingClientRect().top <= 120) {
+          setActiveSection(s.id);
+          break;
+        }
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollTo = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setActiveSection(id);
+  };
+
   return (
     <>
+      <ScrollProgress />
+      <BackToTop />
       <Navbar />
-      <main className="min-h-screen bg-gray-50">
 
-        {/* ── Hero ── */}
-        <div className="relative bg-gradient-to-br from-[#0c3a5e] via-[#1a5276] to-[#0c3a5e] text-white overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-56 h-56 bg-[#c9a84c]/10 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 w-[600px] h-[600px] border border-white/5 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      <main className="min-h-screen bg-[#f8fafc]">
 
-          <div className="relative max-w-4xl mx-auto px-4 py-16 text-center">
-            {/* Shield icon */}
-            <div className="relative inline-flex items-center justify-center mb-6">
-              <div className="w-24 h-24 bg-gradient-to-br from-[#c9a84c]/30 to-[#c9a84c]/10 rounded-full flex items-center justify-center border border-[#c9a84c]/30">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#c9a84c] to-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                  <FaShieldAlt size={28} className="text-white" />
-                </div>
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full flex items-center justify-center border-2 border-[#1a5276]">
-                <FaCheckCircle size={10} className="text-white" />
-              </div>
-            </div>
+        {/* ── HERO ──────────────────────────────────────────────── */}
+        <div className="relative bg-gradient-to-br from-[#04243f] via-[#0c3a5e] to-[#0f4a30] text-white overflow-hidden">
+          <IslamicBg />
 
-            <div className="inline-flex items-center gap-2 bg-[#c9a84c]/20 border border-[#c9a84c]/40 rounded-full px-4 py-1.5 text-[#f0d080] text-xs font-medium mb-4">
-              <FaLock size={10} />
+          {/* Glowing orbs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#1a5276]/40 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-[#c9a84c]/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-[#1b6a3b]/20 rounded-full blur-2xl -translate-y-1/2 pointer-events-none" />
+
+          <div className="relative max-w-5xl mx-auto px-4 py-20 text-center">
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-[#c9a84c]/20 border border-[#c9a84c]/40 rounded-full px-5 py-2 text-[#f0d080] text-xs font-semibold mb-7 backdrop-blur-sm">
+              <MdPrivacyTip size={14} />
               সর্বশেষ আপডেট: ১৫ এপ্রিল ২০২৬
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-bold mb-3 leading-tight">
+            {/* Shield icon */}
+            <div className="relative inline-flex items-center justify-center mb-7">
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-white/10 to-white/5 border border-white/20 backdrop-blur-sm flex items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#c9a84c] to-amber-600 flex items-center justify-center shadow-2xl">
+                  <FaShieldAlt size={36} className="text-white" />
+                </div>
+              </div>
+              <div className="absolute -top-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-3 border-[#0c3a5e] flex items-center justify-center shadow-lg">
+                <MdVerified size={16} className="text-white" />
+              </div>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
               গোপনীয়তা নীতি
             </h1>
-            <p className="text-white/70 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-white/65 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-10">
               Holy Relationship আপনার ব্যক্তিগত তথ্যের নিরাপত্তা ও গোপনীয়তাকে সর্বোচ্চ গুরুত্ব দেয়।
               এই নীতিটি আমরা কীভাবে আপনার তথ্য সংগ্রহ, ব্যবহার ও সুরক্ষা করি তা বিস্তারিত ব্যাখ্যা করে।
             </p>
 
-            {/* Stats row */}
-            <div className="flex flex-wrap justify-center gap-6 mt-8">
+            {/* Trust badges */}
+            <div className="flex flex-wrap justify-center gap-4">
               {[
                 { icon: FaLock, label: 'SSL এনক্রিপশন', sub: 'সম্পূর্ণ সুরক্ষিত' },
-                { icon: FaUserLock, label: 'ডেটা প্রাইভেসি', sub: 'তথ্য বিক্রি হয় না' },
+                { icon: MdSecurity, label: 'ডেটা প্রাইভেসি', sub: 'তথ্য বিক্রি হয় না' },
                 { icon: FaGlobe, label: 'GDPR সম্মত', sub: 'আন্তর্জাতিক মান' },
+                { icon: MdVerified, label: 'যাচাইকৃত সাইট', sub: 'বিশ্বাসযোগ্য সেবা' },
               ].map(({ icon: Icon, label, sub }) => (
-                <div key={label} className="flex items-center gap-3 bg-white/10 rounded-2xl px-5 py-3">
-                  <Icon size={20} className="text-[#c9a84c]" />
+                <div key={label} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3.5 border border-white/10 hover:bg-white/15 transition-colors">
+                  <div className="w-9 h-9 bg-[#c9a84c]/20 rounded-xl flex items-center justify-center">
+                    <Icon size={16} className="text-[#f0d080]" />
+                  </div>
                   <div className="text-left">
-                    <p className="font-semibold text-sm">{label}</p>
-                    <p className="text-white/60 text-xs">{sub}</p>
+                    <p className="font-bold text-sm leading-tight">{label}</p>
+                    <p className="text-white/50 text-xs">{sub}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Wave divider */}
+          <div className="absolute bottom-0 left-0 right-0">
+            <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" className="w-full">
+              <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="#f8fafc"/>
+            </svg>
+          </div>
         </div>
 
-        {/* ── Gold divider ── */}
-        <div className="h-1 bg-gradient-to-r from-transparent via-[#c9a84c] to-transparent" />
+        {/* ── GOLD RULE ──────────────────────────────────────────── */}
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="h-0.5 bg-gradient-to-r from-transparent via-[#c9a84c]/40 to-transparent -mt-0.5 mb-10" />
+        </div>
 
-        {/* ── Body: sidebar + content ── */}
-        <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* ── BODY ──────────────────────────────────────────────── */}
+        <div className="max-w-6xl mx-auto px-4 pb-16">
           <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-            {/* Sticky sidebar — Table of Contents */}
-            <aside className="lg:sticky lg:top-24 w-full lg:w-64 flex-shrink-0">
+            {/* ── Sticky sidebar ─────────────────────────────────── */}
+            <aside className="lg:sticky lg:top-24 w-full lg:w-72 flex-shrink-0">
+
+              {/* Intro card */}
+              <div className="bg-gradient-to-br from-[#1a5276] to-[#0c3a5e] rounded-2xl p-5 mb-4 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10"><svg width="100%" height="100%"><defs><pattern id="sp" width="30" height="30" patternUnits="userSpaceOnUse"><polygon points="15,2 28,8 28,22 15,28 2,22 2,8" fill="none" stroke="white" strokeWidth="0.5"/></pattern></defs><rect width="100%" height="100%" fill="url(#sp)"/></svg></div>
+                <div className="relative flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-[#c9a84c]/30 rounded-xl flex items-center justify-center">
+                    <FaShieldAlt size={16} className="text-[#f0d080]" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">আমাদের প্রতিশ্রুতি</p>
+                    <p className="text-white/50 text-xs">ইসলামিক মূল্যবোধে পরিচালিত</p>
+                  </div>
+                </div>
+                <p className="text-white/70 text-xs leading-relaxed relative">
+                  আপনার ব্যক্তিগত তথ্য আপনার সম্পদ। আমরা কখনো আপনার তথ্য বিক্রি বা অপব্যবহার করি না।
+                </p>
+              </div>
+
+              {/* Table of contents */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-[#1a5276] to-[#0c3a5e] px-5 py-4">
-                  <p className="text-white font-bold text-sm">বিষয়সূচী</p>
-                  <p className="text-white/60 text-xs mt-0.5">যেকোনো অংশে যান</p>
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <p className="font-bold text-gray-800 text-sm">বিষয়সূচী</p>
+                  <p className="text-xs text-gray-400 mt-0.5">যেকোনো অংশে সরাসরি যান</p>
                 </div>
                 <nav className="p-2">
-                  {tableOfContents.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => { scrollTo(item.id); setActiveSection(item.id); }}
-                      className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
-                        activeSection === item.id
-                          ? 'bg-[#1a5276]/10 text-[#1a5276] font-semibold'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-[#1a5276]'
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                      <FaChevronRight
-                        size={10}
-                        className={activeSection === item.id ? 'text-[#c9a84c]' : 'text-gray-300'}
-                      />
-                    </button>
-                  ))}
+                  {sections.map((s, i) => {
+                    const Icon = s.icon;
+                    const isActive = activeSection === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => scrollTo(s.id)}
+                        className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all group ${
+                          isActive
+                            ? 'bg-[#1a5276]/8 text-[#1a5276]'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-[#1a5276]'
+                        }`}
+                      >
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
+                          isActive ? `bg-gradient-to-br ${s.gradient}` : 'bg-gray-100 group-hover:bg-gray-200'
+                        }`}>
+                          <Icon size={11} className={isActive ? 'text-white' : 'text-gray-400'} />
+                        </div>
+                        <span className={`flex-1 truncate ${isActive ? 'font-semibold' : ''}`}>{s.title}</span>
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-[#c9a84c] flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </nav>
 
-                {/* Quick contact in sidebar */}
-                <div className="mx-3 mb-3 mt-1 bg-[#c9a84c]/10 border border-[#c9a84c]/20 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-[#1a5276] mb-1">প্রশ্ন আছে?</p>
-                  <p className="text-xs text-gray-500 mb-3">আমাদের সাথে সরাসরি কথা বলুন</p>
+                {/* Contact in sidebar */}
+                <div className="m-3 mt-1 bg-gradient-to-br from-[#c9a84c]/10 to-amber-50 border border-[#c9a84c]/20 rounded-xl p-4">
+                  <p className="text-xs font-bold text-[#1a5276] mb-1">প্রশ্ন আছে?</p>
+                  <p className="text-xs text-gray-500 mb-3 leading-snug">আমাদের সাথে সরাসরি কথা বলুন</p>
                   <Link
                     href="/contact"
-                    className="block text-center text-xs bg-[#1a5276] text-white rounded-lg py-2 font-medium hover:bg-[#0c3a5e] transition-colors"
+                    className="flex items-center justify-center gap-2 text-xs bg-[#1a5276] hover:bg-[#0c3a5e] text-white rounded-xl py-2.5 font-semibold transition-colors"
                   >
-                    যোগাযোগ করুন
+                    <FaEnvelope size={11} /> যোগাযোগ করুন
                   </Link>
                 </div>
               </div>
             </aside>
 
-            {/* Main content */}
-            <div className="flex-1 space-y-6">
+            {/* ── Main content ───────────────────────────────────── */}
+            <div className="flex-1 space-y-5">
 
-              {/* Intro card */}
-              <div className="bg-gradient-to-br from-[#1a5276]/5 to-[#c9a84c]/5 border border-[#1a5276]/10 rounded-2xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-[#c9a84c]/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <FaShieldAlt size={18} className="text-[#c9a84c]" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-[#1a5276] mb-2">Holy Relationship-এর প্রতিশ্রুতি</h2>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      আমরা বিশ্বাস করি আপনার ব্যক্তিগত তথ্য আপনার সম্পদ। ইসলামিক মূল্যবোধ ও আধুনিক ডেটা সুরক্ষার নীতি মেনে আমরা আপনার গোপনীয়তা রক্ষায় প্রতিশ্রুতিবদ্ধ।
-                    </p>
-                  </div>
+              {/* Intro alert */}
+              <div className="bg-white rounded-2xl border border-[#c9a84c]/20 shadow-sm p-5 flex gap-4">
+                <div className="w-11 h-11 bg-gradient-to-br from-[#c9a84c]/20 to-amber-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <FaShieldAlt size={18} className="text-[#c9a84c]" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-gray-800 mb-1.5 text-sm">Holy Relationship-এর গোপনীয়তা প্রতিশ্রুতি</h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    আমরা বিশ্বাস করি আপনার ব্যক্তিগত তথ্য আপনার সম্পদ। ইসলামিক মূল্যবোধ ও আধুনিক ডেটা সুরক্ষার নীতি মেনে আমরা আপনার গোপনীয়তা রক্ষায় প্রতিশ্রুতিবদ্ধ। এই নীতি বাংলাদেশের প্রযোজ্য আইন মেনে তৈরি।
+                  </p>
                 </div>
               </div>
 
-              {/* Policy sections */}
-              {sections.map((section, idx) => {
-                const Icon = section.icon;
-                return (
-                  <div
-                    key={section.id}
-                    id={section.id}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden scroll-mt-24"
-                  >
-                    {/* Section header */}
-                    <div className={`bg-gradient-to-r ${section.color} p-5 flex items-center gap-4`}>
-                      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Icon size={18} className="text-white" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white/50 text-xs font-mono">০{idx + 1}</span>
-                          <h2 className="text-white font-bold text-base">{section.title}</h2>
-                        </div>
-                      </div>
-                    </div>
+              {/* Sections */}
+              {sections.map((section, idx) => (
+                <SectionCard key={section.id} section={section} index={idx} />
+              ))}
 
-                    <div className="p-6">
-                      {/* Content blocks */}
-                      <div className="space-y-5 mb-6">
-                        {section.content.map((block) => (
-                          <div key={block.subtitle}>
-                            <h3 className="font-semibold text-gray-800 text-sm mb-1.5 flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 bg-[#c9a84c] rounded-full inline-block" />
-                              {block.subtitle}
-                            </h3>
-                            <p className="text-sm text-gray-600 leading-relaxed pl-3.5">
-                              {block.text}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Highlights */}
-                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                          মূল বিষয়সমূহ
-                        </p>
-                        <ul className="space-y-2">
-                          {section.highlights.map((h) => (
-                            <li key={h} className="flex items-start gap-2.5 text-sm text-gray-700">
-                              <FaCheckCircle size={13} className="text-green-500 flex-shrink-0 mt-0.5" />
-                              {h}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Contact CTA */}
-              <div className="bg-gradient-to-br from-[#1a5276] to-[#0c3a5e] rounded-2xl p-8 text-white text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+              {/* CTA banner */}
+              <div className="relative bg-gradient-to-br from-[#0c3a5e] via-[#1a5276] to-[#0f4a30] rounded-3xl p-8 text-white text-center overflow-hidden">
+                <IslamicBg opacity={0.08} />
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <div className="relative">
-                  <div className="w-14 h-14 bg-[#c9a84c]/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#c9a84c]/30">
-                    <FaEnvelope size={22} className="text-[#c9a84c]" />
+                  <div className="w-16 h-16 bg-[#c9a84c]/20 rounded-full flex items-center justify-center mx-auto mb-5 border border-[#c9a84c]/30">
+                    <FaEnvelope size={24} className="text-[#c9a84c]" />
                   </div>
-                  <h3 className="font-bold text-xl mb-2">গোপনীয়তা সম্পর্কে প্রশ্ন আছে?</h3>
-                  <p className="text-white/70 text-sm mb-6 max-w-sm mx-auto leading-relaxed">
-                    আমাদের ডেডিকেটেড প্রাইভেসি টিম আপনার যেকোনো প্রশ্নের উত্তর দিতে সদা প্রস্তুত।
-                    ২৪ ঘণ্টার মধ্যে উত্তর দেওয়ার নিশ্চয়তা দিচ্ছি।
+                  <h3 className="font-black text-2xl mb-2">গোপনীয়তা নিয়ে কোনো প্রশ্ন?</h3>
+                  <p className="text-white/65 text-sm mb-7 max-w-md mx-auto leading-relaxed">
+                    আমাদের প্রাইভেসি টিম আপনার যেকোনো প্রশ্নের উত্তর দিতে সদা প্রস্তুত।
+                    ২৪ ঘণ্টার মধ্যে উত্তর দেওয়ার নিশ্চয়তা।
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Link
-                      href="/contact"
-                      className="inline-flex items-center justify-center gap-2 bg-[#c9a84c] hover:bg-amber-500 text-white font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+                    <Link href="/contact"
+                      className="inline-flex items-center justify-center gap-2 bg-[#c9a84c] hover:bg-amber-500 text-white font-bold px-8 py-3.5 rounded-2xl transition-colors text-sm shadow-lg"
                     >
-                      <FaEnvelope size={14} />
-                      যোগাযোগ করুন
+                      <FaEnvelope size={14} /> যোগাযোগ করুন
                     </Link>
-                    <Link
-                      href="/faq"
-                      className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-7 py-3 rounded-xl transition-colors text-sm border border-white/20"
+                    <Link href="/faq"
+                      className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-3.5 rounded-2xl transition-colors text-sm border border-white/20"
                     >
                       FAQ দেখুন
                     </Link>
                   </div>
-                  <p className="text-white/40 text-xs mt-5">
-                    ইমেইল: privacy@holyrelationship.com
-                  </p>
+                  <p className="text-white/35 text-xs">privacy@holyrelationship.com</p>
                 </div>
               </div>
 
               {/* Footer note */}
-              <div className="text-center text-xs text-gray-400 pb-4">
-                এই নীতি সর্বশেষ ১৫ এপ্রিল ২০২৬ তারিখে আপডেট করা হয়েছে।
+              <div className="text-center text-xs text-gray-400 pb-2 leading-relaxed">
+                এই নীতি সর্বশেষ ১৫ এপ্রিল ২০২৬ তারিখে আপডেট করা হয়েছে।<br />
                 Holy Relationship সর্বদা ইসলামিক মূল্যবোধ ও আধুনিক ডেটা সুরক্ষা বিধি মেনে পরিচালিত।
               </div>
             </div>
           </div>
         </div>
       </main>
+
       <Footer />
     </>
   );

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { biodataAPI } from '@/lib/api';
@@ -14,8 +15,9 @@ import {
 import toast from 'react-hot-toast';
 
 export default function ProfileCard({ biodata, showScore = false, score = null }) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { language } = useLanguage();
+  const router = useRouter();
   const [isShortlisted, setIsShortlisted] = useState(
     user?.shortlistedProfiles?.includes(biodata?.userId?._id || biodata?.userId) ?? false
   );
@@ -31,6 +33,11 @@ export default function ProfileCard({ biodata, showScore = false, score = null }
     e.preventDefault();
     e.stopPropagation();
     if (shortlistLoading) return;
+
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
     setShortlistLoading(true);
     try {

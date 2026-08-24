@@ -72,7 +72,7 @@ export default function PremiumPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <a
-                href="https://wa.me/8801XXXXXXXXX?text=প্রিমিয়াম সক্রিয় করতে চাই"
+                href="https://wa.me/8801682981828?text=প্রিমিয়াম সক্রিয় করতে চাই"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-colors"
@@ -80,7 +80,7 @@ export default function PremiumPage() {
                 <FaWhatsapp size={18} /> WhatsApp করুন
               </a>
               <a
-                href="tel:+8801XXXXXXXXX"
+                href="tel:+8801682981828"
                 className="flex-1 flex items-center justify-center gap-2 bg-[#1a5276] hover:bg-[#154361] text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 <FaPhone size={16} /> ফোন করুন

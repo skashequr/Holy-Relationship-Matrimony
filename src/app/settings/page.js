@@ -5,10 +5,11 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { authAPI, userAPI } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { FaLock, FaTrash, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import { FaLock, FaTrash, FaEye, FaEyeSlash, FaSpinner, FaCamera, FaCheckCircle } from 'react-icons/fa';
+import Link from 'next/link';
 
 export default function SettingsPage() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   // Password change
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -106,6 +107,30 @@ export default function SettingsPage() {
               পাসওয়ার্ড পরিবর্তন করুন
             </button>
           </form>
+        </div>
+
+        {/* Face Verification */}
+        <div className="bg-white rounded-xl border p-6">
+          <h2 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <FaCamera className="text-[#1a5276]" size={15} /> ফেস যাচাইকরণ
+          </h2>
+          {user?.verificationBadge ? (
+            <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
+              <FaCheckCircle size={15} /> আপনার অ্যাকাউন্ট ইতিমধ্যে যাচাই হয়েছে
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-500 mb-4">
+                সেলফি তুলে অ্যাকাউন্ট যাচাই করুন। যাচাই ব্যাজ থাকলে প্রোফাইলে বিশ্বাসযোগ্যতা বাড়ে।
+              </p>
+              <Link
+                href="/face-verify"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a5276] hover:bg-[#154360] text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                <FaCamera size={13} /> ফেস যাচাই করুন
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Danger Zone */}

@@ -32,7 +32,7 @@ export default function MessagesPage() {
 
   // Socket setup
   useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000', {
+    const socket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'https://holy-relationship-matrimony-backend-1ige.onrender.com', {
       withCredentials: true,
     });
     socketRef.current = socket;

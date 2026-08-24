@@ -8,13 +8,13 @@ import DashboardLayout from '@/components/DashboardLayout';
 import ProfileCard from '@/components/ProfileCard';
 import { SkeletonCard } from '@/components/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
-import { matchAPI, searchAPI, biodataAPI } from '@/lib/api';
+import { matchAPI, searchAPI, biodataAPI, ruqyahAPI, referralAPI } from '@/lib/api';
 import {
   FaHeart, FaSearch, FaList, FaFileAlt,
   FaCheckCircle, FaExclamationCircle, FaStar,
   FaArrowRight, FaTimes, FaFilter, FaRing,
   FaUsers, FaMale, FaFemale, FaThumbsUp,
-  FaEdit, FaComments, FaCrown, FaBell, FaSparkles,
+  FaEdit, FaComments, FaCrown, FaBell, FaSparkles, FaCamera, FaMoon, FaGift,
 } from 'react-icons/fa';
 import { MdVerified } from 'react-icons/md';
 import toast from 'react-hot-toast';
@@ -102,6 +102,10 @@ export default function DashboardPage() {
   const [marriedLoading, setMarriedLoading] = useState(false);
   const [completeness, setCompleteness] = useState(null);
 
+  const [ruqyahSlots, setRuqyahSlots] = useState([]);
+  const [myRuqyahBookings, setMyRuqyahBookings] = useState([]);
+  const [referralStats, setReferralStats] = useState(null);
+
   const [ageMin, setAgeMin] = useState('');
   const [ageMax, setAgeMax] = useState('');
   const [ageResults, setAgeResults] = useState([]);
@@ -112,16 +116,22 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [recRes, newRes, statsRes, compRes] = await Promise.all([
+        const [recRes, newRes, statsRes, compRes, ruqyahSlotsRes, ruqyahBookingsRes, referralRes] = await Promise.all([
           matchAPI.getRecommended({ limit: 4 }),
           matchAPI.getNewProfiles(),
           matchAPI.getStats(),
           matchAPI.getCompleteness(),
+          ruqyahAPI.getSlots().catch(() => ({ data: { slots: [] } })),
+          ruqyahAPI.getMyBookings().catch(() => ({ data: { bookings: [] } })),
+          referralAPI.getMe().catch(() => ({ data: null })),
         ]);
         setRecommended(recRes.data?.profiles || []);
         setNewProfiles(newRes.data?.data || []);
         setStats(statsRes.data?.stats || null);
         setCompleteness(compRes.data || null);
+        setRuqyahSlots((ruqyahSlotsRes.data?.slots || []).filter((s) => s.bookedCount < s.capacity));
+        setMyRuqyahBookings((ruqyahBookingsRes.data?.bookings || []).filter((b) => b.status !== 'cancelled').slice(0, 2));
+        setReferralStats(referralRes.data || null);
       } catch {
         toast.error('ড্যাশবোর্ড লোড করতে সমস্যা হয়েছে।');
       } finally { setLoading(false); }
@@ -231,6 +241,20 @@ export default function DashboardPage() {
       desc: 'সর্বশেষ আপডেট',
       gradient: 'bg-gradient-to-br from-indigo-500 to-violet-600',
     },
+    {
+      href: '/ruqyah',
+      icon: <FaMoon />,
+      label: 'রুকাইয়া',
+      desc: 'সেশন বুক করুন',
+      gradient: 'bg-gradient-to-br from-slate-600 to-slate-800',
+    },
+    {
+      href: '/referral',
+      icon: <FaGift />,
+      label: 'রেফারেল',
+      desc: 'পয়েন্ট উপার্জন',
+      gradient: 'bg-gradient-to-br from-amber-500 to-orange-600',
+    },
   ];
 
   const cpct = completeness?.percentage ?? 0;
@@ -240,6 +264,22 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+
+        {/* ── FACE VERIFICATION BANNER ────────────────────────────── */}
+        {!user?.verificationBadge && (
+          <Link href="/face-verify"
+            className="flex items-center gap-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl px-5 py-3.5 shadow-md hover:from-amber-600 hover:to-orange-600 transition-colors"
+          >
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <FaCamera size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm leading-tight">অ্যাকাউন্ট যাচাই করুন</p>
+              <p className="text-xs text-white/80 mt-0.5">সেলফি তুলে সাথে সাথে যাচাই ব্যাজ পান — অ্যাডমিনের অপেক্ষা নেই</p>
+            </div>
+            <FaArrowRight size={14} className="flex-shrink-0 opacity-80" />
+          </Link>
+        )}
 
         {/* ── HERO WELCOME BANNER ─────────────────────────────────── */}
         <div className="relative bg-gradient-to-br from-[#0c3a5e] via-[#1a5276] to-[#1b6a3b] rounded-3xl overflow-hidden shadow-xl">
@@ -358,6 +398,104 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {/* ── RUQYAH SECTION ─────────────────────────────────────── */}
+        <div className="relative overflow-hidden rounded-2xl">
+          {/* Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900" />
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #c9a84c 0%, transparent 50%), radial-gradient(circle at 80% 20%, #1a5276 0%, transparent 50%)' }} />
+
+          <div className="relative p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+              {/* Left info */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                    <FaMoon className="text-[#c9a84c]" size={15} />
+                  </div>
+                  <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">ইসলামিক হিলিং</span>
+                </div>
+                <h2 className="text-xl font-black text-white leading-tight">রুকাইয়া সেশন</h2>
+                <p className="text-sm text-white/60 mt-1 leading-relaxed">
+                  কুরআন ও সুন্নাহ অনুযায়ী রুকাইয়া সেশনে অংশ নিন। আপনার সমস্যার কথা জানান, স্লট বুক করুন।
+                </p>
+
+                {/* Slot count badge */}
+                {ruqyahSlots.length > 0 ? (
+                  <div className="mt-3 inline-flex items-center gap-2 bg-green-500/20 border border-green-400/30 text-green-300 text-xs font-bold px-3 py-1.5 rounded-full">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    {ruqyahSlots.length}টি স্লট এখন উপলব্ধ
+                  </div>
+                ) : (
+                  <div className="mt-3 inline-flex items-center gap-2 bg-white/10 text-white/50 text-xs font-semibold px-3 py-1.5 rounded-full">
+                    শীঘ্রই নতুন স্লট আসছে
+                  </div>
+                )}
+              </div>
+
+              {/* Right: my bookings or CTA */}
+              <div className="sm:w-56 space-y-2">
+                {myRuqyahBookings.length > 0 ? (
+                  <>
+                    <p className="text-xs text-white/50 font-semibold mb-1">আপনার বুকিং</p>
+                    {myRuqyahBookings.map((b) => (
+                      <div key={b._id} className="bg-white/10 rounded-xl p-3 border border-white/10">
+                        <p className="text-white text-xs font-bold">
+                          {b.slotId ? new Date(b.slotId.date).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' }) : '—'}
+                          {b.slotId?.time && ` — ${b.slotId.time}`}
+                        </p>
+                        <span className={`mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          b.status === 'confirmed' ? 'bg-green-400/20 text-green-300' :
+                          b.status === 'pending' ? 'bg-amber-400/20 text-amber-300' :
+                          'bg-red-400/20 text-red-300'
+                        }`}>
+                          {b.status === 'confirmed' ? '✓ নিশ্চিত' : b.status === 'pending' ? '⏳ অপেক্ষায়' : '✗ বাতিল'}
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                ) : null}
+
+                <Link href="/ruqyah"
+                  className="flex items-center justify-center gap-2 w-full bg-[#c9a84c] hover:bg-[#b8943b] text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors shadow-lg">
+                  <FaMoon size={13} />
+                  {myRuqyahBookings.length > 0 ? 'সব বুকিং দেখুন' : 'স্লট বুক করুন'}
+                  <FaArrowRight size={11} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── REFERRAL CARD ──────────────────────────────────────── */}
+        <Link href="/referral" className="block">
+          <div className="bg-gradient-to-r from-amber-500 via-[#c9a84c] to-amber-600 rounded-2xl p-5 shadow-md hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <FaGift className="text-white" size={22} />
+                </div>
+                <div>
+                  <p className="font-black text-white text-base leading-tight">রেফারেল প্রোগ্রাম</p>
+                  <p className="text-white/80 text-xs mt-0.5">বন্ধুদের রেফার করুন → পয়েন্ট পান → বায়োডেটা আনলক করুন</p>
+                  {referralStats && (
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-white font-black text-lg leading-none">{referralStats.points}</span>
+                      <span className="text-white/70 text-xs">পয়েন্ট</span>
+                      {referralStats.unlockableCount > 0 && (
+                        <span className="bg-white/30 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          {referralStats.unlockableCount}টি আনলক করা যাবে!
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <FaArrowRight className="text-white/70 flex-shrink-0" size={16} />
+            </div>
+          </div>
+        </Link>
 
         {/* ── PROFILE COMPLETENESS ───────────────────────────────── */}
         {completeness && user?.biodataId && (
