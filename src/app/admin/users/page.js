@@ -6,7 +6,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { adminAPI } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { FaBan, FaCheckCircle, FaSearch, FaSpinner, FaShieldAlt, FaEye, FaCamera } from 'react-icons/fa';
+import { FaBan, FaCheckCircle, FaSearch, FaSpinner, FaShieldAlt, FaEye, FaCamera, FaUserPlus } from 'react-icons/fa';
 import BiodataDetailModal from '@/components/BiodataDetailModal';
 import { biodataAPI } from '@/lib/api';
 import { useDebounce } from '@/lib/hooks';
@@ -27,6 +27,10 @@ export default function AdminUsersPage() {
   const [banReason, setBanReason] = useState('');
   const [viewBiodata, setViewBiodata] = useState(null);
   const [biodataLoading, setBiodataLoading] = useState(null);
+  const [addUserModal, setAddUserModal] = useState(false);
+  const [addUserJson, setAddUserJson] = useState('{\n  "name": "",\n  "email": "",\n  "phone": "",\n  "gender": "male"\n}');
+  const [addUserError, setAddUserError] = useState('');
+  const [addUserLoading, setAddUserLoading] = useState(false);
   const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => { fetchUsers(1); }, [debouncedSearch, filterGender, filterStatus, filterAgeMin, filterAgeMax]);
@@ -82,6 +86,29 @@ export default function AdminUsersPage() {
     finally { setBiodataLoading(null); }
   };
 
+  const handleAddUser = async () => {
+    setAddUserError('');
+    let payload;
+    try {
+      payload = JSON.parse(addUserJson);
+    } catch {
+      setAddUserError('সঠিক JSON ফরম্যাট দিন।');
+      return;
+    }
+    setAddUserLoading(true);
+    try {
+      const { data } = await adminAPI.createUser(payload);
+      toast.success(data.message || 'ইউজার তৈরি হয়েছে।');
+      setAddUserModal(false);
+      setAddUserJson('{\n  "name": "",\n  "email": "",\n  "phone": "",\n  "gender": "male"\n}');
+      fetchUsers(1);
+    } catch (err) {
+      setAddUserError(err.response?.data?.message || 'ইউজার তৈরি করা যায়নি।');
+    } finally {
+      setAddUserLoading(false);
+    }
+  };
+
   const handleVerify = async (id) => {
     setActionLoading((p) => ({ ...p, [id]: 'verify' }));
     try {
@@ -100,6 +127,12 @@ export default function AdminUsersPage() {
             <h1 className="text-xl font-bold text-gray-800">সদস্য পরিচালনা</h1>
             <p className="text-sm text-gray-500">মোট {total} জন সদস্য</p>
           </div>
+          <button
+            onClick={() => setAddUserModal(true)}
+            className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm"
+          >
+            <FaUserPlus size={13} /> নতুন ইউজার যোগ করুন
+          </button>
         </div>
 
         {/* Filters */}
@@ -254,6 +287,40 @@ export default function AdminUsersPage() {
 
       {/* Biodata Detail Modal */}
       {viewBiodata && <BiodataDetailModal biodata={viewBiodata} onClose={() => setViewBiodata(null)} />}
+
+      {/* Add User Modal */}
+      {addUserModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 className="font-bold text-gray-800 mb-1">JSON দিয়ে নতুন ইউজার যোগ করুন</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              name, email, gender আবশ্যক। password না দিলে একটি অটো-জেনারেট হবে এবং লগইন তথ্য ইউজারের ইমেইলে পাঠানো হবে।
+            </p>
+            <textarea
+              value={addUserJson}
+              onChange={(e) => setAddUserJson(e.target.value)}
+              className="input-field h-48 resize-none font-mono text-xs"
+              spellCheck={false}
+            />
+            {addUserError && <p className="text-xs text-red-500 mt-2">{addUserError}</p>}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => { setAddUserModal(false); setAddUserError(''); }}
+                className="flex-1 btn-outline py-2.5 rounded-xl"
+              >
+                বাতিল
+              </button>
+              <button
+                onClick={handleAddUser}
+                disabled={addUserLoading}
+                className="flex-1 btn-primary py-2.5 rounded-xl disabled:opacity-50"
+              >
+                {addUserLoading ? 'প্রক্রিয়াধীন...' : 'যোগ করুন'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ban Modal */}
       {banModal && (

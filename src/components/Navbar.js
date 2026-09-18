@@ -11,7 +11,7 @@ import {
   FaSearch, FaHeart, FaList, FaHome, FaUserCircle
 } from 'react-icons/fa';
 
-export default function Navbar() {
+export default function Navbar({ variant }) {
   const { user, logout, isAuthenticated } = useAuth();
   const { t, toggleLanguage, language } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -54,14 +54,12 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="bg-[#1a5276] shadow-lg sticky top-0 z-50">
+    <nav aria-label="প্রধান নেভিগেশন" className={`${variant === 'home' ? 'bg-[#2b221b] border-b border-[#635039] home-navbar' : 'bg-[#1a5276] shadow-lg'} sticky top-0 z-50`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20 gap-2">
           {/* Logo */}
-          <Link href={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#f0c040] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-              ☪
-            </div>
+          <Link href={isAuthenticated ? '/dashboard' : '/'} aria-label="Holy Relationship — হোম" className="flex items-center gap-3">
+            <Image src="/hmm-logo.png" alt="HMM" width={48} height={48} className="shrink-0 rounded-full" />
             <div className="hidden sm:block">
               <p className="text-white font-bold text-sm leading-tight">Holy Relationship</p>
               <p className="text-[#c9a84c] text-xs">Marriage Matrimony</p>
@@ -93,6 +91,8 @@ export default function Navbar() {
               </Link>
             </div>
           )}
+
+          {variant === 'home' && !isAuthenticated && <div className="hidden lg:flex items-center gap-6 text-sm text-[#e0d3be]"><Link href="/#why-us" className="hover:text-white">আমাদের বিশেষত্ব</Link><Link href="/#how-it-works" className="hover:text-white">যেভাবে কাজ করে</Link><Link href="/contact" className="hover:text-white">যোগাযোগ</Link></div>}
 
           {/* Right side */}
           <div className="flex items-center gap-2">
@@ -191,10 +191,10 @@ export default function Navbar() {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login" className="text-white/90 hover:text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-all">
+                <Link href="/login" className="text-white/90 hover:text-white text-sm font-medium px-2 sm:px-4 py-2 rounded-lg hover:bg-white/10 transition-all">
                   লগইন
                 </Link>
-                <Link href="/register" className="bg-[#c9a84c] hover:bg-[#b8943b] text-white text-sm font-bold px-5 py-2 rounded-lg transition-all shadow-md">
+                <Link href="/register" className="bg-[#c9a84c] hover:bg-[#b8943b] text-white text-sm font-bold px-3 sm:px-5 py-2 rounded-lg transition-all shadow-md">
                   নিবন্ধন
                 </Link>
               </div>
@@ -202,6 +202,9 @@ export default function Navbar() {
 
             {/* Mobile menu button */}
             <button
+              aria-label={menuOpen ? 'মেনু বন্ধ করুন' : 'মেনু খুলুন'}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
               onClick={() => setMenuOpen(!menuOpen)}
               className="md:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg"
             >
@@ -212,8 +215,8 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden py-3 border-t border-white/10 animate-fade-in">
-            {(isAuthenticated ? navLinks : [{ href: '/search', label: 'বায়োডাটা খুঁজুন', icon: <FaSearch /> }]).map((link) => (
+          <div id="mobile-navigation" className="md:hidden py-3 border-t border-white/10 animate-fade-in">
+            {(isAuthenticated ? navLinks : [{ href: '/search', label: 'বায়োডাটা খুঁজুন', icon: <FaSearch /> }, { href: '/#why-us', label: 'আমাদের বিশেষত্ব', icon: <FaHeart /> }, { href: '/#how-it-works', label: 'যেভাবে কাজ করে', icon: <FaList /> }, { href: '/contact', label: 'যোগাযোগ', icon: <FaUser /> }]).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

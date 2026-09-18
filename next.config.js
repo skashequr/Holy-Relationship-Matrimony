@@ -1,3 +1,5 @@
+const { PHASE_DEVELOPMENT_SERVER } = require('next/constants');
+
 /** @type {import('next').NextConfig} */
 const normalizeApiUrl = (url) => url.replace(/\/+$|\/+$/g, '');
  const defaultApiUrl = 'http://localhost:5000/api';
@@ -28,4 +30,9 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Keep live development assets separate from production builds. Running a
+// build must never replace the CSS/chunk manifest of an open dev preview.
+module.exports = (phase) => ({
+  ...nextConfig,
+  distDir: phase === PHASE_DEVELOPMENT_SERVER ? '.next-dev' : '.next',
+});

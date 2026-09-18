@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,18 +10,23 @@ import { biodataAPI } from '@/lib/api';
 import { formatAge, formatHeight, educationLabels, professionLabels, maritalStatusLabels, getScoreColor } from '@/lib/utils';
 import {
   FaHeart, FaRegHeart, FaMapMarkerAlt, FaGraduationCap,
-  FaBriefcase, FaCheckCircle, FaStar, FaLock, FaEye
+  FaBriefcase, FaCheckCircle, FaStar, FaLock, FaEye, FaUserCircle
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
-export default function ProfileCard({ biodata, showScore = false, score = null }) {
-  const { user, isAuthenticated } = useAuth();
+export default function ProfileCard({ biodata, showScore = false, score = null, theme = 'default' }) {
+  const { user, isAuthenticated, updateUser } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
   const [isShortlisted, setIsShortlisted] = useState(
     user?.shortlistedProfiles?.includes(biodata?.userId?._id || biodata?.userId) ?? false
   );
   const [shortlistLoading, setShortlistLoading] = useState(false);
+
+  const ownerId = biodata?.userId?._id || biodata?.userId;
+  useEffect(() => {
+    setIsShortlisted(user?.shortlistedProfiles?.some(id => String(id?._id || id) === String(ownerId)) ?? false);
+  }, [user?.shortlistedProfiles, ownerId]);
 
   const profile = biodata?.userId || {};
   const personal = biodata?.personal || {};
@@ -43,6 +48,10 @@ export default function ProfileCard({ biodata, showScore = false, score = null }
     try {
       const { data } = await biodataAPI.toggleShortlist(biodata._id);
       setIsShortlisted(data.isShortlisted);
+      updateUser(previous => {
+        const remaining = (previous.shortlistedProfiles || []).filter(id => String(id?._id || id) !== String(ownerId));
+        return { shortlistedProfiles: data.isShortlisted ? [...remaining, ownerId] : remaining };
+      });
       toast.success(data.isShortlisted ? 'শর্টলিস্টে যোগ করা হয়েছে' : 'শর্টলিস্ট থেকে সরানো হয়েছে');
     } catch (error) {
       toast.error('সমস্যা হয়েছে। আবার চেষ্টা করুন।');
@@ -52,22 +61,23 @@ export default function ProfileCard({ biodata, showScore = false, score = null }
   };
 
   return (
-    <div className="profile-card group">
-      <Link href={`/profile/${biodata._id}`}>
+    <div className="profile-card group" data-theme={theme}>
         {/* Profile Image */}
         <div className="relative h-52 bg-gradient-to-br from-[#1a5276]/10 to-[#1b6a3b]/10 overflow-hidden">
+          <Link href={`/profile/${biodata._id}`} className="block h-full" aria-label={`${biodata.biodataNumber || 'বায়োডেটা'} দেখুন`}>
           {profile.profilePicture || biodata.profilePicture ? (
             <Image
               src={profile.profilePicture || biodata.profilePicture}
               alt={personal.fullName || 'Profile'}
               fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <div className="w-20 h-20 rounded-full bg-[#1a5276]/20 flex items-center justify-center">
                 <span className="text-4xl text-[#1a5276]/40">
-                  {profile.gender === 'male' ? '👨' : '👩'}
+                  <FaUserCircle aria-hidden="true" />
                 </span>
               </div>
             </div>
@@ -95,10 +105,13 @@ export default function ProfileCard({ biodata, showScore = false, score = null }
             </div>
           )}
 
+          </Link>
           {/* Shortlist button */}
           <button
             onClick={handleShortlist}
             disabled={shortlistLoading}
+            aria-label={isShortlisted ? 'শর্টলিস্ট থেকে সরান' : 'শর্টলিস্টে যোগ করুন'}
+            aria-pressed={isShortlisted}
             className="absolute bottom-2 right-2 w-9 h-9 bg-white/90 hover:bg-white rounded-full shadow-md flex items-center justify-center transition-all hover:scale-110 disabled:opacity-50"
           >
             {isShortlisted ? (
@@ -110,7 +123,7 @@ export default function ProfileCard({ biodata, showScore = false, score = null }
         </div>
 
         {/* Profile Info */}
-        <div className="p-4">
+        <Link href={`/profile/${biodata._id}`} className="block p-4">
           <div className="flex items-start justify-between mb-2">
             <div>
               <h3 className="font-bold text-gray-800 text-base truncate">
@@ -164,8 +177,7 @@ export default function ProfileCard({ biodata, showScore = false, score = null }
               <span>যোগাযোগ লক</span>
             </div>
           </div>
-        </div>
-      </Link>
+        </Link>
 
       {/* View Profile CTA */}
       <div className="px-4 pb-4">

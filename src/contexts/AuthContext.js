@@ -101,7 +101,7 @@ export function AuthProvider({ children }) {
   };
 
   const updateUser = (updatedUser) => {
-    setUser((prev) => ({ ...prev, ...updatedUser }));
+    setUser((prev) => prev ? ({ ...prev, ...(typeof updatedUser === 'function' ? updatedUser(prev) : updatedUser) }) : prev);
   };
 
   const refreshUser = async () => {

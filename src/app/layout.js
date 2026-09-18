@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import Analytics from '@/components/Analytics';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -30,7 +31,8 @@ export default function RootLayout({ children }) {
     <html lang="bn">
       <body className={inter.variable}>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2113556573683821"
-     crossorigin="anonymous"></script>
+     crossOrigin="anonymous"></script>
+        <Analytics />
         <LanguageProvider>
           <AuthProvider>
             {children}

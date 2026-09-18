@@ -110,6 +110,7 @@ export const searchAPI = {
 
 // Match API
 export const matchAPI = {
+  getDashboard: () => api.get('/match/dashboard'),
   getRecommended: (params) => api.get('/match/recommended', { params }),
   getShortlist: (params) => api.get('/match/shortlist', { params }),
   getNewProfiles: () => api.get('/match/new-profiles'),
@@ -138,10 +139,16 @@ export const userAPI = {
     api.post('/user/face-verify', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
+// Public settings API
+export const settingsAPI = {
+  getTracking: () => api.get('/settings/tracking'),
+};
+
 // Admin API
 export const adminAPI = {
   getAnalytics: () => api.get('/admin/analytics'),
   getUsers: (params) => api.get('/admin/users', { params }),
+  createUser: (data) => api.post('/admin/users', data),
   banUser: (id, reason) => api.put(`/admin/users/${id}/ban`, { reason }),
   unbanUser: (id) => api.put(`/admin/users/${id}/unban`),
   verifyUser: (id) => api.put(`/admin/users/${id}/verify`),
@@ -152,6 +159,7 @@ export const adminAPI = {
   getPayments: (params) => api.get('/admin/payments', { params }),
   approvePayment: (id) => api.patch(`/admin/payments/${id}/approve`),
   rejectPayment: (id, reason) => api.patch(`/admin/payments/${id}/reject`, { reason }),
+  trackConversion: (id) => api.patch(`/admin/payments/${id}/track-conversion`),
   exportPayments: () => api.get('/admin/purchases/export', { responseType: 'blob' }),
   getReports: (params) => api.get('/admin/reports', { params }),
   resolveReport: (id, data) => api.put(`/admin/reports/${id}/resolve`, data),

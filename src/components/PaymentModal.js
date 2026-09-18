@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { paymentAPI } from '@/lib/api';
+import { getGaClientId, trackEvent } from '@/lib/tracking';
 import toast from 'react-hot-toast';
 import { FaTimes, FaMobileAlt, FaSpinner, FaShieldAlt, FaCheckCircle, FaClock } from 'react-icons/fa';
 
@@ -50,11 +51,16 @@ export default function PaymentModal({ targetUserId, targetName, biodataId, onCl
         paymentMethod: selectedMethod,
         transactionId,
         payerPhone,
+        clientId: getGaClientId(),
       });
 
       if (data.success) {
         setStep(3);
         toast.success('পেমেন্ট জমা হয়েছে! অ্যাডমিন যাচাইয়ের পর আনলক হবে।');
+        // The actual "purchase" is confirmed later on admin approval (tracked
+        // server-side); this records the buyer's checkout intent now, while
+        // their own browser/pixel session is still active.
+        trackEvent('add_payment_info', { currency: 'BDT', value: price, payment_type: selectedMethod });
       }
     } catch (error) {
       toast.error(error.response?.data?.messageBn || 'পেমেন্ট ব্যর্থ হয়েছে।');

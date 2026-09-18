@@ -5,7 +5,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { adminAPI } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { FaCreditCard, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
+import { FaCreditCard, FaCheck, FaTimes, FaSpinner, FaChartLine, FaCheckCircle } from 'react-icons/fa';
 
 const statusBadge = {
   completed: 'bg-green-100 text-green-700',
@@ -78,6 +78,19 @@ export default function AdminPaymentsPage() {
       setRejectReason('');
     } catch (err) {
       toast.error(err.response?.data?.messageBn || 'সমস্যা হয়েছে।');
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [id]: null }));
+    }
+  };
+
+  const handleTrackConversion = async (id) => {
+    setActionLoading((prev) => ({ ...prev, [id]: 'track' }));
+    try {
+      await adminAPI.trackConversion(id);
+      toast.success('কনভার্সন ট্র্যাক করা হয়েছে।');
+      setPayments((prev) => prev.map((p) => p._id === id ? { ...p, adConversionTrackedAt: new Date().toISOString() } : p));
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'সমস্যা হয়েছে।');
     } finally {
       setActionLoading((prev) => ({ ...prev, [id]: null }));
     }
@@ -185,6 +198,24 @@ export default function AdminPaymentsPage() {
                               প্রত্যাখ্যান
                             </button>
                           </div>
+                        ) : p.status === 'completed' ? (
+                          p.adConversionTrackedAt ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium" title="Ads-এ কনভার্সন হিসেবে পাঠানো হয়েছে">
+                              <FaCheckCircle size={11} /> ট্র্যাক হয়েছে
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleTrackConversion(p._id)}
+                              disabled={!!actionLoading[p._id]}
+                              title="বিকাশ/নগদ স্টেটমেন্টে সত্যিই মিলিয়ে দেখার পরই ক্লিক করুন"
+                              className="flex items-center gap-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50 mx-auto"
+                            >
+                              {actionLoading[p._id] === 'track'
+                                ? <FaSpinner className="animate-spin" size={10} />
+                                : <FaChartLine size={10} />}
+                              কনভার্সন ট্র্যাক করুন
+                            </button>
+                          )
                         ) : (
                           <span className="text-xs text-gray-300">—</span>
                         )}

@@ -53,7 +53,27 @@ export default function SearchPage() {
   // and logged-in users are shown a different (opposite-gender vs. all) pool.
   useEffect(() => {
     if (authLoading) return;
-    fetchProfiles(1, filters);
+    const query = new URLSearchParams(window.location.search);
+    const landingFilters = { ...initialFilters };
+    const allowed = {
+      gender: ['male', 'female'],
+      maritalStatus: ['single', 'divorced', 'widowed'],
+      division: ['Dhaka', 'Chittagong', 'Rajshahi', 'Khulna', 'Barishal', 'Sylhet', 'Rangpur', 'Mymensingh'],
+    };
+    Object.entries(allowed).forEach(([key, values]) => {
+      const value = query.get(key);
+      if (values.includes(value)) landingFilters[key] = value;
+    });
+    for (const key of ['ageMin', 'ageMax']) {
+      const value = query.get(key);
+      if (value && Number.isInteger(Number(value)) && Number(value) >= 18 && Number(value) <= 100) landingFilters[key] = value;
+    }
+    if (landingFilters.ageMin && landingFilters.ageMax && Number(landingFilters.ageMin) > Number(landingFilters.ageMax)) {
+      landingFilters.ageMin = '';
+      landingFilters.ageMax = '';
+    }
+    setFilters(landingFilters);
+    fetchProfiles(1, landingFilters);
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading]);
