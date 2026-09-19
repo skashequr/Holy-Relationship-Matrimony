@@ -84,6 +84,7 @@ export default function MessagesPage() {
 
   const stopTyping = useCallback(() => {
     clearTimeout(typingTimer.current);
+    typingTimer.current = null;
     if (activeRef.current) socketRef.current?.emit('stopTyping', { conversationId: activeRef.current });
   }, []);
 

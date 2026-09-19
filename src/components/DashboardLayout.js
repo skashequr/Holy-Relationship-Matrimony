@@ -33,6 +33,7 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigationPath = pathname === '/messages' ? '/dashboard/messages' : pathname;
   useEffect(() => {
     if (!loading && !isAuthenticated) router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
   }, [loading, isAuthenticated, pathname, router]);
@@ -42,7 +43,7 @@ export default function DashboardLayout({ children }) {
 
   const navigation = <>
     <div className={styles.member}><span className={styles.avatar}>{user?.name?.trim()?.charAt(0) || 'H'}</span><div><strong>{user?.name}</strong><small>{user?.verificationBadge ? 'যাচাইকৃত সদস্য' : 'আপনার ব্যক্তিগত অ্যাকাউন্ট'}</small></div></div>
-    <nav aria-label="ড্যাশবোর্ড নেভিগেশন">{groups.map(group => <div key={group.label} className={styles.navGroup}><p>{group.label}</p>{group.links.map(([href, label, Icon]) => <Link key={href} href={href} onClick={() => setMenuOpen(false)} aria-current={pathname === href ? 'page' : undefined} className={`${styles.navLink} ${pathname === href ? styles.active : ''}`}><Icon />{label}{pathname === href && <span className={styles.activeDot} />}</Link>)}</div>)}</nav>
+    <nav aria-label="ড্যাশবোর্ড নেভিগেশন">{groups.map(group => <div key={group.label} className={styles.navGroup}><p>{group.label}</p>{group.links.map(([href, label, Icon]) => <Link key={href} href={href} onClick={() => setMenuOpen(false)} aria-current={navigationPath === href ? 'page' : undefined} className={`${styles.navLink} ${navigationPath === href ? styles.active : ''}`}><Icon />{label}{navigationPath === href && <span className={styles.activeDot} />}</Link>)}</div>)}</nav>
     <div className={styles.sidebarHelp}><p>আমরা আছি আপনার পাশে</p><Link href="/contact">সহায়তা নিন <FaArrowRight /></Link></div>
     <button className={styles.logout} onClick={logout}><FaSignOutAlt /> লগআউট</button>
   </>;
