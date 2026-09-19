@@ -1,16 +1,22 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { Dialog } from '@headlessui/react';
+import styles from './DashboardLayout.module.css';
+import theme from './AdminLayout.module.css';
 import { useAuth } from '@/contexts/AuthContext';
 import { PageLoader } from './LoadingSpinner';
 import {
   FaChartBar, FaUsers, FaFileAlt, FaCreditCard,
-  FaFlag, FaCog, FaSignOutAlt, FaHome, FaBell, FaCrown, FaHeart, FaStar, FaMoon, FaGift
+  FaBars, FaTimes, FaFlag, FaCog, FaSignOutAlt, FaHome, FaBell, FaCrown, FaHeart, FaStar, FaMoon, FaGift
 } from 'react-icons/fa';
 
 const adminLinks = [
+  { href: '/admin/counseling', label: 'কাউন্সেলিং বুকিং', icon: <FaHeart size={15} /> },
+  { href: '/admin/face-verification', label: 'ফেস যাচাই', icon: <FaUsers size={15} /> },
   { href: '/admin', label: 'ড্যাশবোর্ড', icon: <FaChartBar size={15} /> },
   { href: '/admin/users', label: 'ব্যবহারকারী', icon: <FaUsers size={15} /> },
   { href: '/admin/biodatas', label: 'বায়োডেটা', icon: <FaFileAlt size={15} /> },
@@ -29,6 +35,8 @@ export default function AdminLayout({ children }) {
   const { user, loading, isAuthenticated, isAdmin, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => setMenuOpen(false), [pathname]);
 
   useEffect(() => {
     if (!loading) {
@@ -40,65 +48,19 @@ export default function AdminLayout({ children }) {
   if (loading) return <PageLoader />;
   if (!isAuthenticated || !isAdmin) return null;
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-60 bg-[#0c3a5e] flex-shrink-0 flex flex-col min-h-screen sticky top-0 h-screen">
-        {/* Logo */}
-        <div className="px-5 py-5 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#c9a84c] rounded-xl flex items-center justify-center text-white font-bold">☪</div>
-            <div>
-              <p className="text-white text-xs font-bold leading-tight">Holy Matrimony</p>
-              <p className="text-white/50 text-xs">Admin Panel</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {adminLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                pathname === link.href
-                  ? 'bg-[#1a5276] text-white shadow-sm'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              {link.icon} {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User info & logout */}
-        <div className="px-3 py-4 border-t border-white/10 space-y-2">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-[#1a5276] rounded-full flex items-center justify-center text-white text-xs font-bold">
-              {user?.name?.[0]?.toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-medium truncate">{user?.name}</p>
-              <p className="text-white/40 text-xs truncate">Admin</p>
-            </div>
-          </div>
-          <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 text-white/60 hover:text-white text-xs rounded-lg hover:bg-white/5 transition-all">
-            <FaHome size={13} /> ড্যাশবোর্ড
-          </Link>
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:text-red-300 text-xs rounded-lg hover:bg-white/5 transition-all"
-          >
-            <FaSignOutAlt size={13} /> লগআউট
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 min-w-0 p-6 overflow-y-auto">
-        {children}
-      </main>
-    </div>
-  );
+  const navigation = <>
+    <div className={styles.member}><span className={styles.avatar}>{user?.name?.[0]}</span><div><strong>{user?.name}</strong><small>অ্যাডমিন অ্যাকাউন্ট</small></div></div>
+    <nav aria-label="অ্যাডমিন নেভিগেশন" className={styles.navGroup}>{adminLinks.map(link => <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} aria-current={pathname === link.href ? 'page' : undefined} className={`${styles.navLink} ${pathname === link.href ? styles.active : ''}`}>{link.icon}{link.label}</Link>)}</nav>
+    <Link href="/dashboard" className={styles.navLink}><FaHome /> সদস্যের ড্যাশবোর্ড</Link>
+    <button onClick={logout} className={styles.logout}><FaSignOutAlt /> লগআউট</button>
+  </>;
+  return <div className={`${styles.shell} ${theme.admin}`}>
+    <a className={styles.skip} href="#admin-content">মূল কনটেন্টে যান</a>
+    <header className={styles.header}>
+      <Link href="/" className={styles.brand}><Image src="/hmm-logo.png" alt="HMM" width={43} height={43} /><span>Holy Relationship<small>ADMINISTRATION</small></span></Link>
+      <div className={styles.headerRight}><Link href="/" className={styles.headerSearch}><FaHome /><span>হোমপেইজ</span></Link><span className={styles.headerAvatar}>{user?.name?.[0]}</span><button aria-label="অ্যাডমিন মেনু খুলুন" aria-expanded={menuOpen} className={styles.menuButton} onClick={() => setMenuOpen(true)}><FaBars /></button></div>
+    </header>
+    <div className={styles.layout}><aside className={styles.sidebar}>{navigation}</aside><div className={styles.mainWrap}><main id="admin-content" className={styles.main}>{children}</main><footer className={styles.footer}>© {new Date().getFullYear()} Holy Relationship · পরিচালনা প্যানেল</footer></div></div>
+    <Dialog open={menuOpen} onClose={setMenuOpen} className={styles.dialog}><div className={styles.backdrop} aria-hidden="true" /><Dialog.Panel className={styles.drawer}><div className={styles.drawerHeader}><Dialog.Title>পরিচালনা প্যানেল</Dialog.Title><button aria-label="মেনু বন্ধ করুন" onClick={() => setMenuOpen(false)}><FaTimes /></button></div>{navigation}</Dialog.Panel></Dialog>
+  </div>;
 }

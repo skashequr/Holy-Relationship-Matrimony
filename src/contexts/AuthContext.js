@@ -2,11 +2,11 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/lib/api';
+import api, { saveSession, clearSession } from '@/lib/api';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -15,13 +15,13 @@ export function AuthProvider({ children }) {
 
   const loadUser = useCallback(async () => {
     const token = Cookies.get('token');
-    if (!token) {
+    if (!token && !Cookies.get('refreshToken')) {
       setLoading(false);
       return;
     }
 
     // Attach stored token immediately so the /auth/me request is authenticated
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (token) api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
     try {
       const { data } = await api.get('/auth/me');
@@ -30,11 +30,11 @@ export function AuthProvider({ children }) {
       } else {
         throw new Error('Failed to load user');
       }
-    } catch {
-      // Token invalid or expired — clear it
-      Cookies.remove('token', { path: '/' });
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
+    } catch (error) {
+      if ([401, 403].includes(error.response?.status)) {
+        clearSession();
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,18 +44,10 @@ export function AuthProvider({ children }) {
     loadUser();
   }, [loadUser]);
 
-  const cookieOptions = {
-    expires: 7,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    path: '/',
-  };
-
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
     if (data.success) {
-      Cookies.set('token', data.token, cookieOptions);
-      api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+      saveSession(data.token, data.refreshToken);
       setUser(data.user);
       toast.success('লগইন সফল হয়েছে!');
 
@@ -80,9 +72,8 @@ export function AuthProvider({ children }) {
   };
 
   // Called by the verify-email page after successful OTP verification
-  const completeRegistration = (token, userData) => {
-    Cookies.set('token', token, cookieOptions);
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  const completeRegistration = (token, userData, refreshToken) => {
+    saveSession(token, refreshToken);
     setUser(userData);
   };
 
@@ -92,8 +83,7 @@ export function AuthProvider({ children }) {
     } catch {
       // Ignore errors — always clear local state
     } finally {
-      Cookies.remove('token', { path: '/' });
-      delete api.defaults.headers.common['Authorization'];
+      clearSession();
       setUser(null);
       router.push('/');
       toast.success('লগআউট সফল হয়েছে।');

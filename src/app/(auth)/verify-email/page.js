@@ -105,7 +105,7 @@ export default function VerifyEmailPage() {
       });
 
       // Backend creates the user and returns token + user on success
-      completeRegistration(data.token, data.user);
+      completeRegistration(data.token, data.user, data.refreshToken);
       toast.success('নিবন্ধন সম্পন্ন হয়েছে!');
       router.push('/dashboard');
     } catch (err) {

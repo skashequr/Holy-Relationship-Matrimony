@@ -1,0 +1,25 @@
+.theme { color: #2e241b; }
+.theme :global(.btn-primary) { background: #34281e; color: #fff7e8; }
+.theme :global(.btn-primary):hover { background: #57422d; }
+.theme :global(.btn-outline) { border-color: #cfc1aa; color: #483b2a; background: transparent; }
+.theme :global(.btn-outline):hover { background: #ede4d4; }
+.theme :global(.input-field) { background: #fcfaf6; border-color: #e7ded0; color: #483b2a; }
+.theme :global(.input-field):focus { border-color: #b38a43; --tw-ring-color: #b38a43; }
+.theme :global(.label) { color: #483b2a; }
+.theme :global(.bg-white), .theme :global(.profile-card) { background-color: #fffefa; }
+.theme :global(.bg-gray-50) { background-color: #f7f2e9; }
+.theme :global(.border-gray-100), .theme :global(.border-gray-200), .theme :global(.border-gray-50) { border-color: #e7ded0; }
+.theme :global(.text-gray-800), .theme :global(.text-gray-700) { color: #2e241b; }
+.theme :global(.text-gray-600), .theme :global(.text-gray-500) { color: #776d61; }
+.theme :global(.text-gray-400) { color: #897c69; }
+.theme :global([class*="text-[#1a5276]"]), .theme :global([class*="text-[#173c52]"]) { color: #876535; }
+.theme :global([class*="bg-[#1a5276]/10"]), .theme :global([class*="bg-[#1a5276]/20"]) { background-color: #e9dfcb; }
+.theme :global(span[class*="bg-[#1a5276]"]) { background-color: #846a43; color: #fff7e8; }
+.theme :global(span[class*="bg-[#1a5276]/10"]) { background-color: #f0e7d7; color: #876535; }
+.theme :global(.profile-card > div:first-child) { background: linear-gradient(135deg, #f2eadc, #e5d9c2); }
+.theme :global(a[class*="bg-[#1a5276]/5"]) { background: #f1ebdf; color: #876535; }
+.theme :global(a[class*="bg-[#1a5276]/5"]:hover) { background: #57422d; color: #fff7e8; }
+.theme :global(input[type="checkbox"]) { accent-color: #967033; }
+.theme :is(button, a, select, input):focus-visible { outline: 3px solid #b38a43; outline-offset: 3px; }
+.theme ::-webkit-scrollbar-track { background: #f4f0e8; }
+.theme ::-webkit-scrollbar-thumb { background: #c5b497; }

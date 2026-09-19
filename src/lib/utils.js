@@ -7,9 +7,9 @@ export const formatAge = (age, lang = 'bn') => {
 // Format height in cm to feet/inches
 export const formatHeight = (cm, lang = 'bn') => {
   if (!cm) return '';
-  const totalInches = cm / 2.54;
+  const totalInches = Math.round(cm / 2.54);
   const feet = Math.floor(totalInches / 12);
-  const inches = Math.round(totalInches % 12);
+  const inches = totalInches % 12;
   if (lang === 'bn') {
     return `${toBengaliNumber(feet)} ফুট ${toBengaliNumber(inches)} ইঞ্চি (${toBengaliNumber(cm)} সেমি)`;
   }

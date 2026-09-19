@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Dialog } from '@headlessui/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PageLoader } from './LoadingSpinner';
-import { FaHome, FaSearch, FaHeart, FaRegHeart, FaCreditCard, FaBell, FaCog, FaFileAlt, FaComment, FaCrown, FaStar, FaRing, FaBars, FaTimes, FaMoon, FaGift, FaSignOutAlt, FaArrowRight } from 'react-icons/fa';
+import { FaCamera, FaHome, FaSearch, FaHeart, FaRegHeart, FaCreditCard, FaBell, FaCog, FaFileAlt, FaComment, FaCrown, FaStar, FaRing, FaBars, FaTimes, FaMoon, FaGift, FaSignOutAlt, FaArrowRight } from 'react-icons/fa';
 import styles from './DashboardLayout.module.css';
 
 const groups = [
@@ -15,12 +15,14 @@ const groups = [
     ['/dashboard', 'ওভারভিউ', FaHome], ['/biodata', 'আমার বায়োডেটা', FaFileAlt],
     ['/search', 'বায়োডেটা খুঁজুন', FaSearch], ['/matches', 'পছন্দের ম্যাচ', FaHeart],
     ['/shortlist', 'শর্টলিস্ট', FaRegHeart],
+    ['/biodata#download', 'Download Biodata', FaFileAlt], ['/face-verify', 'Face Verification', FaCamera],
   ] },
   { label: 'যোগাযোগ ও কার্যক্রম', links: [
     ['/dashboard/interests', 'ইন্টারেস্ট', FaRing], ['/dashboard/messages', 'বার্তা', FaComment],
     ['/notifications', 'বিজ্ঞপ্তি', FaBell], ['/payments', 'পেমেন্ট ইতিহাস', FaCreditCard],
   ] },
   { label: 'আরও সুবিধা', links: [
+    ['/counseling', 'কাউন্সেলিং বুকিং', FaComment],
     ['/dashboard/premium', 'প্রিমিয়াম', FaCrown], ['/ruqyah', 'রুকইয়াহ', FaMoon],
     ['/referral', 'রেফারেল', FaGift], ['/dashboard/review', 'রিভিউ দিন', FaStar], ['/settings', 'সেটিংস', FaCog],
   ] },

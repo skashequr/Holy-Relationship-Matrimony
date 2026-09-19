@@ -30,6 +30,9 @@ export default function ProfileCard({ biodata, showScore = false, score = null, 
 
   const profile = biodata?.userId || {};
   const personal = biodata?.personal || {};
+  // Legacy records may contain feet in the centimetre field. Do not guess
+  // their unit or display an impossible height as centimetres.
+  const hasValidHeight = Number.isFinite(Number(personal.height)) && Number(personal.height) >= 100 && Number(personal.height) <= 250;
   const education = biodata?.education || {};
   const profession = biodata?.profession || {};
   const address = biodata?.address || {};
@@ -131,7 +134,7 @@ export default function ProfileCard({ biodata, showScore = false, score = null, 
               </h3>
               <p className="text-sm text-gray-500">
                 {formatAge(personal.age, language)}
-                {personal.height && <> · {formatHeight(personal.height, language)}</>}
+                {hasValidHeight && <> · {formatHeight(personal.height, language)}</>}
               </p>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import AdminLayout from '@/components/AdminLayout';
 import { adminAPI } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -37,15 +38,18 @@ function StatCard({ title, value, subtitle, icon, color, trend }) {
 export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     adminAPI.getAnalytics()
       .then(({ data }) => setAnalytics(data.analytics))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <AdminLayout><LoadingSpinner /></AdminLayout>;
+
+  if (error) return <AdminLayout><div role="alert" className="p-6 bg-white rounded-xl border">পরিসংখ্যান লোড করা যায়নি। <button className="btn-primary" onClick={() => window.location.reload()}>আবার চেষ্টা করুন</button></div></AdminLayout>;
 
   const { users, biodatas, payments, reports, charts } = analytics || {};
 
@@ -55,8 +59,8 @@ export default function AdminDashboardPage() {
     datasets: [{
       label: 'নতুন সদস্য',
       data: charts?.monthlyGrowth?.map((d) => d.count) || [],
-      backgroundColor: 'rgba(26, 82, 118, 0.7)',
-      borderColor: '#1a5276',
+      backgroundColor: 'rgba(137, 101, 46, 0.7)',
+      borderColor: '#89652e',
       borderWidth: 2,
       borderRadius: 6,
     }],
@@ -82,7 +86,7 @@ export default function AdminDashboardPage() {
     labels: ['পুরুষ', 'মহিলা'],
     datasets: [{
       data: [users?.male || 0, users?.female || 0],
-      backgroundColor: ['#1a5276', '#c9a84c'],
+      backgroundColor: ['#89652e', '#c9a84c'],
       borderWidth: 0,
     }],
   };
@@ -97,14 +101,14 @@ export default function AdminDashboardPage() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">অ্যাডমিন ড্যাশবোর্ড</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Holy Relationship Matrimony — পরিচালনা প্যানেল</p>
+        <div className="rounded-2xl border border-[#dfd1b8] bg-[#efe5d3] p-6 flex flex-wrap justify-between items-center gap-4">
+          <div><p className="text-xs tracking-widest text-[#89652e] mb-2">HOLY MATRIMONY / OVERVIEW</p><h1 className="text-2xl font-bold text-gray-800">অ্যাডমিন ড্যাশবোর্ড</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Holy Relationship Matrimony — পরিচালনা প্যানেল</p></div><Link href="/admin/users" className="btn-primary">+ সদস্য ও বায়োডাটা যোগ করুন</Link>
         </div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="মোট সদস্য" value={users?.total} subtitle={`এই সপ্তাহে +${users?.newThisWeek || 0}`} icon={<FaUsers size={18} className="text-white" />} color="bg-[#1a5276]" />
+          <StatCard title="মোট সদস্য" value={users?.total} subtitle={`এই সপ্তাহে +${users?.newThisWeek || 0}`} icon={<FaUsers size={18} className="text-white" />} color="bg-[#89652e]" />
           <StatCard title="অনুমোদিত বায়োডেটা" value={biodatas?.approved} subtitle={`মোট ${biodatas?.total || 0} টি`} icon={<FaCheckCircle size={18} className="text-white" />} color="bg-[#1b6a3b]" />
           <StatCard title="মোট রাজস্ব" value={`৳${payments?.totalRevenue || 0}`} subtitle={`এই মাসে ৳${payments?.monthlyRevenue || 0}`} icon={<FaCreditCard size={18} className="text-white" />} color="bg-[#c9a84c]" />
           <StatCard title="পর্যালোচনা বাকি" value={biodatas?.pending} subtitle={`${reports?.pending || 0} টি অভিযোগ বাকি`} icon={<FaClock size={18} className="text-white" />} color="bg-red-500" />

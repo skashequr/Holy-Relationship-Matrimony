@@ -1,0 +1,27 @@
+.page { min-height: 100vh; display: flex; flex-direction: column; background: #fcfaf6; }
+.container { flex: 1; width: 100%; max-width: 1320px; margin: 0 auto; padding: 32px 32px 64px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.eyebrow { color: #8b692e; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.title { color: #2e241b; font-size: clamp(26px, 3vw, 34px); line-height: 1.4; font-weight: 700; margin-bottom: 8px; }
+.guestNotice { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; margin-bottom: 24px; background: #f7f2e9; border: 1px solid #e7ded0; border-radius: 14px; line-height: 1.8; }
+.resultsHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; min-height: 54px; }
+.resultsHeader h2 { font-size: 20px; font-weight: 700; color: #2e241b; }
+.resultsHeader p { font-size: 13px; color: #776d61; margin-top: 4px; }
+.reset { color: #88642c; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; padding: 8px 0; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.grid :global(.profile-card) { display: flex; flex-direction: column; min-width: 0; border-color: #e7ded0; box-shadow: 0 3px 14px #44311b08; border-radius: 16px; }
+.grid :global(.profile-card) > :last-child { margin-top: auto; }
+.grid :global(.profile-card) h3 { white-space: normal; overflow-wrap: anywhere; }
+.empty { text-align: center; padding: 64px 24px; background: #fffefa; border: 1px dashed #d2c1a3; border-radius: 16px; }
+.error { border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin-bottom: 18px; background: #fff7f7; color: #991b1b; }
+.error button { margin-top: 12px; font-weight: 600; text-decoration: underline; }
+.draftNotice { background: #f3ecdf; color: #876535; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; }
+.page button:focus-visible, .page a:focus-visible { outline: 3px solid #b38a43; outline-offset: 3px; }
+@media (max-width: 1199px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 639px) {
+  .container { padding: 22px 16px 40px; }
+  .header { align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+  .guestNotice { padding: 14px 16px; margin-bottom: 20px; }
+  .grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .resultsHeader h2 { font-size: 19px; }
+}

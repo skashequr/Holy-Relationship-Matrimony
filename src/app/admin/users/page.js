@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import AdminLayout from '@/components/AdminLayout';
+import AdminMemberModal from '@/components/AdminMemberModal';
 import { adminAPI } from '@/lib/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { FaBan, FaCheckCircle, FaSearch, FaSpinner, FaShieldAlt, FaEye, FaCamera, FaUserPlus } from 'react-icons/fa';
 import BiodataDetailModal from '@/components/BiodataDetailModal';
-import { biodataAPI } from '@/lib/api';
 import { useDebounce } from '@/lib/hooks';
 
 export default function AdminUsersPage() {
@@ -28,9 +28,7 @@ export default function AdminUsersPage() {
   const [viewBiodata, setViewBiodata] = useState(null);
   const [biodataLoading, setBiodataLoading] = useState(null);
   const [addUserModal, setAddUserModal] = useState(false);
-  const [addUserJson, setAddUserJson] = useState('{\n  "name": "",\n  "email": "",\n  "phone": "",\n  "gender": "male"\n}');
-  const [addUserError, setAddUserError] = useState('');
-  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [biodataMember, setBiodataMember] = useState(null);
   const debouncedSearch = useDebounce(search, 500);
 
   useEffect(() => { fetchUsers(1); }, [debouncedSearch, filterGender, filterStatus, filterAgeMin, filterAgeMax]);
@@ -50,7 +48,7 @@ export default function AdminUsersPage() {
       setTotal(data.pagination?.total || 0);
       setTotalPages(data.pagination?.totalPages || 1);
       setPage(pg);
-    } catch {}
+    } catch { toast.error('সদস্যের তালিকা লোড করা যায়নি।'); }
     finally { setLoading(false); }
   };
 
@@ -80,33 +78,10 @@ export default function AdminUsersPage() {
   const handleViewBiodata = async (biodataId) => {
     setBiodataLoading(biodataId);
     try {
-      const { data } = await biodataAPI.getById(biodataId);
+      const { data } = await adminAPI.getBiodata(biodataId);
       setViewBiodata(data.biodata);
     } catch { toast.error('বায়োডেটা লোড করা যায়নি।'); }
     finally { setBiodataLoading(null); }
-  };
-
-  const handleAddUser = async () => {
-    setAddUserError('');
-    let payload;
-    try {
-      payload = JSON.parse(addUserJson);
-    } catch {
-      setAddUserError('সঠিক JSON ফরম্যাট দিন।');
-      return;
-    }
-    setAddUserLoading(true);
-    try {
-      const { data } = await adminAPI.createUser(payload);
-      toast.success(data.message || 'ইউজার তৈরি হয়েছে।');
-      setAddUserModal(false);
-      setAddUserJson('{\n  "name": "",\n  "email": "",\n  "phone": "",\n  "gender": "male"\n}');
-      fetchUsers(1);
-    } catch (err) {
-      setAddUserError(err.response?.data?.message || 'ইউজার তৈরি করা যায়নি।');
-    } finally {
-      setAddUserLoading(false);
-    }
   };
 
   const handleVerify = async (id) => {
@@ -122,7 +97,7 @@ export default function AdminUsersPage() {
   return (
     <AdminLayout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-gray-800">সদস্য পরিচালনা</h1>
             <p className="text-sm text-gray-500">মোট {total} জন সদস্য</p>
@@ -213,6 +188,12 @@ export default function AdminUsersPage() {
                               {u.verificationBadge && <FaCheckCircle size={11} className="text-green-500" title={u.isFaceVerified ? 'ফেস যাচাই' : 'অ্যাডমিন যাচাই'} />}
                             </p>
                             <p className="text-xs text-gray-400 truncate max-w-[150px]">{u.email}</p>
+                            <button disabled={actionLoading[u._id] === 'email'} className="text-xs text-[#89652e] hover:underline disabled:opacity-50" onClick={async () => {
+                              setActionLoading(p => ({ ...p, [u._id]: 'email' }));
+                              try { const { data } = await adminAPI.sendLoginEmail(u._id); toast.success(data.message); }
+                              catch (err) { toast.error(err.response?.data?.message || 'ইমেইল পাঠানো যায়নি।'); }
+                              finally { setActionLoading(p => ({ ...p, [u._id]: null })); }
+                            }}>{actionLoading[u._id] === 'email' ? 'পাঠানো হচ্ছে…' : 'লগইন নির্দেশনা পাঠান'}</button>
                           </div>
                         </div>
                       </td>
@@ -226,7 +207,7 @@ export default function AdminUsersPage() {
                               u.biodataId.status === 'rejected' ? 'bg-red-100 text-red-600' :
                               'bg-yellow-100 text-yellow-700'
                             }`}>
-                              {u.biodataId.status === 'approved' ? '✓' : u.biodataId.status === 'rejected' ? '✗' : '⏳'}
+                              {u.biodataId.status === 'approved' ? 'অনুমোদিত' : u.biodataId.status === 'rejected' ? 'প্রত্যাখ্যাত' : u.biodataId.status === 'draft' ? 'খসড়া' : 'পর্যালোচনাধীন'}
                             </span>
                             <button
                               onClick={() => handleViewBiodata(u.biodataId._id)}
@@ -237,7 +218,7 @@ export default function AdminUsersPage() {
                               {biodataLoading === u.biodataId._id ? <FaSpinner size={10} className="animate-spin" /> : <FaEye size={10} />}
                             </button>
                           </div>
-                        ) : <span className="text-xs text-gray-400">নেই</span>}
+                        ) : <button className="text-xs font-semibold text-[#89652e] hover:underline whitespace-nowrap" onClick={() => setBiodataMember(u)}>+ বায়োডাটা যোগ</button>}
                       </td>
                       <td className="table-cell text-center">
                         {u.isBanned ? (
@@ -288,39 +269,7 @@ export default function AdminUsersPage() {
       {/* Biodata Detail Modal */}
       {viewBiodata && <BiodataDetailModal biodata={viewBiodata} onClose={() => setViewBiodata(null)} />}
 
-      {/* Add User Modal */}
-      {addUserModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
-            <h3 className="font-bold text-gray-800 mb-1">JSON দিয়ে নতুন ইউজার যোগ করুন</h3>
-            <p className="text-xs text-gray-500 mb-3">
-              name, email, gender আবশ্যক। password না দিলে একটি অটো-জেনারেট হবে এবং লগইন তথ্য ইউজারের ইমেইলে পাঠানো হবে।
-            </p>
-            <textarea
-              value={addUserJson}
-              onChange={(e) => setAddUserJson(e.target.value)}
-              className="input-field h-48 resize-none font-mono text-xs"
-              spellCheck={false}
-            />
-            {addUserError && <p className="text-xs text-red-500 mt-2">{addUserError}</p>}
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={() => { setAddUserModal(false); setAddUserError(''); }}
-                className="flex-1 btn-outline py-2.5 rounded-xl"
-              >
-                বাতিল
-              </button>
-              <button
-                onClick={handleAddUser}
-                disabled={addUserLoading}
-                className="flex-1 btn-primary py-2.5 rounded-xl disabled:opacity-50"
-              >
-                {addUserLoading ? 'প্রক্রিয়াধীন...' : 'যোগ করুন'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {(addUserModal || biodataMember) && <AdminMemberModal member={biodataMember} onClose={() => { setAddUserModal(false); setBiodataMember(null); }} onSaved={() => fetchUsers(1)} />}
 
       {/* Ban Modal */}
       {banModal && (

@@ -19,6 +19,23 @@ export default function BiodataPage() {
   const [biodata, setBiodata] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const downloadBiodata = async () => {
+    if (!biodata || downloading) return;
+    setDownloading(true);
+    try {
+      const { data } = await biodataAPI.downloadPDF(biodata._id);
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `biodata-${biodata.biodataNumber || biodata._id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { toast.error('বায়োডেটা ডাউনলোড হয়নি। আবার চেষ্টা করুন।'); }
+    finally { setDownloading(false); }
+  };
   const fileRef = useRef(null);
 
   useEffect(() => { fetchBiodata(); }, []);
@@ -125,7 +142,10 @@ export default function BiodataPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <button id="download" onClick={downloadBiodata} disabled={downloading} className="btn-outline flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm disabled:opacity-50">
+                    {downloading ? <FaSpinner className="animate-spin" /> : <FaFileAlt />} {downloading ? 'ডাউনলোড হচ্ছে…' : 'Download Biodata'}
+                  </button>
                   <Link href="/biodata/edit" className="btn-outline flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm">
                     <FaEdit size={13} /> সম্পাদনা করুন
                   </Link>

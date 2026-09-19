@@ -21,6 +21,30 @@ const api = axios.create({
   },
 });
 
+const cookieOptions = {
+  expires: 7,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  path: '/',
+};
+
+export const saveSession = (token, refreshToken) => {
+  Cookies.set('token', token, cookieOptions);
+  if (refreshToken) Cookies.set('refreshToken', refreshToken, cookieOptions);
+  else Cookies.remove('refreshToken', { path: '/' });
+  api.defaults.headers.common.Authorization = `Bearer ${token}`;
+};
+
+export const clearSession = () => {
+  Cookies.remove('token', { path: '/' });
+  Cookies.remove('refreshToken', { path: '/' });
+  delete api.defaults.headers.common.Authorization;
+};
+
+let refreshPromise = null;
+const publicAuthRequest = (url = '') =>
+  /\/auth\/(login|register|verify-otp|send-otp|forgot-password|reset-password|refresh-token)(?:\?|$)/.test(url);
+
 // Request interceptor - attach token
 api.interceptors.request.use(
   (config) => {
@@ -36,24 +60,50 @@ api.interceptors.request.use(
 // Response interceptor - handle errors
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && originalRequest && !publicAuthRequest(originalRequest.url)) {
+      const refreshToken = Cookies.get('refreshToken');
+      if (!originalRequest._retry && refreshToken) {
+        originalRequest._retry = true;
+        try {
+          // All concurrent expired requests share one refresh operation.
+          if (!refreshPromise) {
+            refreshPromise = axios.post(`${normalizedApiUrl}/auth/refresh-token`, { refreshToken }, {
+              timeout: 30000,
+              withCredentials: true,
+            }).then(({ data }) => {
+              if (!data.success || !data.token) throw new Error('Invalid refresh response');
+              Cookies.set('token', data.token, cookieOptions);
+              api.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+              return data.token;
+            }).finally(() => { refreshPromise = null; });
+          }
+          const token = await refreshPromise;
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          // Keep credentials on timeouts, offline connections and server failures.
+          if (![401, 403].includes(refreshError.response?.status)) return Promise.reject(refreshError);
+          clearSession();
+          error = refreshError;
+        }
+      }
+      clearSession();
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        const publicPaths = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password'];
+        if (!publicPaths.some((p) => path.startsWith(p))) {
+          window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
+        }
+      }
+    }
     const message =
       error.response?.data?.messageBn ||
       error.response?.data?.message ||
       'কিছু একটা সমস্যা হয়েছে।';
 
-    if (error.response?.status === 401) {
-      Cookies.remove('token');
-      delete api.defaults.headers.common['Authorization'];
-      if (typeof window !== 'undefined') {
-        const path = window.location.pathname;
-        const publicPaths = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password'];
-        const isPublic = publicPaths.some((p) => path.startsWith(p));
-        if (!isPublic) {
-          window.location.href = `/login?redirect=${encodeURIComponent(path)}`;
-        }
-      }
-    } else if (error.response?.status === 403) {
+    if (error.response?.status === 403) {
       // Show backend messageBn if available, otherwise generic message
       const forbidMsg = message !== 'কিছু একটা সমস্যা হয়েছে।' ? message : 'আপনার এই কাজের অনুমতি নেই।';
       toast.error(forbidMsg);
@@ -79,7 +129,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
-  refreshToken: () => api.post('/auth/refresh-token'),
+  refreshToken: () => api.post('/auth/refresh-token', { refreshToken: Cookies.get('refreshToken') }),
   getMe: () => api.get('/auth/me'),
   sendOTP: (data) => api.post('/auth/send-otp', data),
   verifyOTP: (data) => api.post('/auth/verify-otp', data),
@@ -149,6 +199,8 @@ export const adminAPI = {
   getAnalytics: () => api.get('/admin/analytics'),
   getUsers: (params) => api.get('/admin/users', { params }),
   createUser: (data) => api.post('/admin/users', data),
+  createUserBiodata: (id, data) => api.post(`/admin/users/${id}/biodata`, data),
+  sendLoginEmail: (id) => api.post(`/admin/users/${id}/login-email`),
   banUser: (id, reason) => api.put(`/admin/users/${id}/ban`, { reason }),
   unbanUser: (id) => api.put(`/admin/users/${id}/unban`),
   verifyUser: (id) => api.put(`/admin/users/${id}/verify`),
@@ -208,6 +260,7 @@ export const interestAPI = {
 
 // Message API
 export const messageAPI = {
+  markRead: (id, messageId) => api.patch(`/messages/${id}/read`, { messageId }),
   getConversations: (params) => api.get('/messages/conversations', { params }),
   getMessages: (conversationId, params) => api.get(`/messages/${conversationId}`, { params }),
   sendMessage: (data) => api.post('/messages', data),
@@ -223,6 +276,20 @@ export const referralAPI = {
 };
 
 // Ruqyah API
+export const counselingAPI = {
+  types: () => api.get('/counseling/types'),
+  book: (data) => api.post('/counseling/book', data),
+  myBookings: () => api.get('/counseling/my-bookings'),
+  adminBookings: () => api.get('/counseling/admin/bookings'),
+  update: (id, status) => api.patch(`/counseling/admin/bookings/${id}`, { status }),
+};
+
+export const faceVerificationAPI = {
+  list: () => api.get('/face-verification'),
+  photo: (id) => api.get(`/face-verification/${id}/photo`, { responseType: 'blob' }),
+  review: (id, status) => api.patch(`/face-verification/${id}`, { status }),
+};
+
 export const ruqyahAPI = {
   getSlots: () => api.get('/ruqyah/slots'),
   book: (data) => api.post('/ruqyah/book', data),

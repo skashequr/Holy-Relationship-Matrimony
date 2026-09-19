@@ -8,7 +8,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import PaymentModal from '@/components/PaymentModal';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
-import { biodataAPI, interestAPI, messageAPI, referralAPI } from '@/lib/api';
+import { biodataAPI, interestAPI, messageAPI, referralAPI, userAPI } from '@/lib/api';
 import {
   formatAge, formatHeight, formatDate, educationLabels,
   professionLabels, maritalStatusLabels, incomeLabels,
@@ -18,30 +18,33 @@ import {
   FaCheckCircle, FaMapMarkerAlt, FaGraduationCap, FaBriefcase,
   FaHeart, FaRegHeart, FaPhone, FaEnvelope, FaLock, FaUser,
   FaFlag, FaStar, FaShieldAlt, FaExclamationTriangle, FaComment,
-  FaSpinner, FaPaperPlane
+  FaSpinner, FaPaperPlane, FaArrowLeft, FaLeaf, FaUsers, FaTimes
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { Dialog } from '@headlessui/react';
+import styles from './profile.module.css';
 
 function InfoRow({ label, value }) {
-  if (!value) return null;
+  if (value === undefined || value === null || value === '') return null;
   return (
-    <div className="flex items-start py-2.5 border-b border-gray-50 last:border-0">
-      <span className="text-gray-500 text-sm w-40 flex-shrink-0">{label}</span>
-      <span className="text-gray-800 text-sm font-medium">{value}</span>
-    </div>
+    <dl className={styles.infoRow}>
+      <dt>{label}</dt><dd>{value}</dd>
+    </dl>
   );
 }
 
+const sectionDetails = {
+  'নিজের সম্পর্কে': ['about', FaUser], 'ব্যক্তিগত তথ্য': ['personal', FaUser],
+  'ধর্মীয় তথ্য': ['religion', FaLeaf], 'শিক্ষাগত যোগ্যতা': ['education', FaGraduationCap],
+  'পেশাগত তথ্য': ['profession', FaBriefcase], 'পারিবারিক তথ্য': ['family', FaUsers],
+  'ঠিকানা': ['address', FaMapMarkerAlt], 'শখ ও বিশেষ গুণ': ['lifestyle', FaStar],
+  'প্রত্যাশিত জীবনসঙ্গী': ['expectations', FaHeart],
+};
 function Section({ title, children }) {
-  return (
-    <div className="card mb-4">
-      <h3 className="font-bold text-[#1a5276] text-base mb-3 pb-2 border-b border-gray-100 flex items-center gap-2">
-        <span className="w-1 h-5 bg-[#1a5276] rounded-full" />
-        {title}
-      </h3>
-      <div>{children}</div>
-    </div>
-  );
+  const [anchor, Icon] = sectionDetails[title];
+  return <section id={anchor} className={styles.section}>
+    <h2><span><Icon /></span>{title}</h2><div className={styles.sectionBody}>{children}</div>
+  </section>;
 }
 
 export default function ProfileDetailPage() {
@@ -60,9 +63,17 @@ export default function ProfileDetailPage() {
   const [sendingInterest, setSendingInterest] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
   const [canMessage, setCanMessage] = useState(false);
+  const [shortlisting, setShortlisting] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportError, setReportError] = useState('');
   const lang = 'bn';
 
   useEffect(() => {
+    setLoading(true);
+    setBiodata(null);
+    setInterestSent(false);
+    setCanMessage(false);
+    setPointUnlocked(false);
     fetchBiodata();
     // Load point unlock status + user points
     referralAPI.getMe().then((r) => setUserPoints(r.data?.points || 0)).catch(() => {});
@@ -112,7 +123,7 @@ export default function ProfileDetailPage() {
     setSendingInterest(true);
     try {
       await interestAPI.send({ biodataId: id });
-      toast.success('Interest পাঠানো হয়েছে');
+      toast.success('আগ্রহ প্রকাশ করুনো হয়েছে');
       setInterestSent(true);
     } catch (err) {
       const msg = err.response?.data?.messageBn || err.response?.data?.message || 'সমস্যা হয়েছে।';
@@ -138,13 +149,16 @@ export default function ProfileDetailPage() {
   };
 
   const handleShortlist = async () => {
+    if (shortlisting) return;
+    setShortlisting(true);
     try {
       const { data } = await biodataAPI.toggleShortlist(id);
       setIsShortlisted(data.isShortlisted);
+      await refreshUser?.();
       toast.success(data.isShortlisted ? 'শর্টলিস্টে যোগ করা হয়েছে' : 'শর্টলিস্ট থেকে সরানো হয়েছে');
     } catch {
       toast.error('সমস্যা হয়েছে।');
-    }
+    } finally { setShortlisting(false); }
   };
 
   const handlePointUnlock = async () => {
@@ -158,7 +172,7 @@ export default function ProfileDetailPage() {
       setPointUnlocked(true);
       setUserPoints((p) => p - 100);
       toast.success('বায়োডেটা আনলক হয়েছে!');
-      await refreshUser?.();
+      await Promise.all([refreshUser?.(), fetchBiodata()]);
     } catch (err) {
       toast.error(err.response?.data?.messageBn || 'আনলক করা যায়নি।');
     } finally {
@@ -184,30 +198,32 @@ export default function ProfileDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto">
+      <div className={styles.profile}>
+        <div className={styles.breadcrumb}><Link href="/search"><FaArrowLeft /> বায়োডাটা খুঁজুন</Link><span>/</span><span>{biodata.biodataNumber || 'সদস্যের প্রোফাইল'}</span></div>
         {/* Profile Header */}
-        <div className="card mb-4">
-          <div className="flex flex-col md:flex-row gap-6">
+        <div className={styles.hero}>
+          <div className={styles.heroBanner}><span>HOLY RELATIONSHIP</span><p>একটি পরিচয়, নতুন সম্ভাবনা</p><FaLeaf aria-hidden="true" /></div>
+          <div className={styles.heroBody}>
             {/* Photo */}
-            <div className="flex-shrink-0">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden bg-gray-100 border-2 border-gray-200">
+            <div className={styles.portraitColumn}>
+              <div className={styles.portrait}>
                 {biodata.profilePicture || profileUser?.profilePicture ? (
                   <Image
                     src={biodata.profilePicture || profileUser.profilePicture}
-                    alt={personal?.fullName}
+                    alt={personal?.fullName || 'সদস্যের প্রোফাইল'}
                     width={160}
                     height={160}
                     className="object-cover w-full h-full"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-5xl text-gray-300">
-                    {profileUser?.gender === 'male' ? '👨' : '👩'}
+                  <div className={styles.photoPlaceholder}>
+                    <FaUser aria-hidden="true" /><span>{biodata.photoHidden ? 'ছবি সংরক্ষিত' : 'প্রোফাইল ছবি'}</span>
                   </div>
                 )}
               </div>
               <div className="text-center mt-2">
                 {biodata.biodataNumber && (
-                  <span className="text-xs bg-[#1a5276] text-white px-3 py-1 rounded-full font-medium">
+                  <span className={styles.biodataNumber}>
                     {biodata.biodataNumber}
                   </span>
                 )}
@@ -215,10 +231,10 @@ export default function ProfileDetailPage() {
             </div>
 
             {/* Info */}
-            <div className="flex-1">
+            <div className={styles.identity}>
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-800">{personal?.fullName}</h1>
+                  <h1 className={styles.name}>{personal?.fullName || `বায়োডাটা ${biodata.biodataNumber || ''}`}</h1>
                   <p className="text-gray-500 text-sm mt-1">
                     {formatAge(personal?.age, lang)}
                     {personal?.height && <> · {formatHeight(personal.height, lang)}</>}
@@ -237,14 +253,12 @@ export default function ProfileDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 flex-wrap">
+                <div className={styles.actions}>
                   <button
                     onClick={handleShortlist}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
-                      isShortlisted
-                        ? 'bg-red-50 border-red-200 text-red-500'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-red-200'
-                    }`}
+                    disabled={shortlisting}
+                    aria-pressed={!!isShortlisted}
+                    className={`${styles.secondaryButton} ${isShortlisted ? styles.selected : ''}`}
                   >
                     {isShortlisted ? <FaHeart /> : <FaRegHeart />}
                     {isShortlisted ? 'শর্টলিস্টেড' : 'শর্টলিস্ট'}
@@ -255,15 +269,15 @@ export default function ProfileDetailPage() {
                     <button
                       onClick={handleSendInterest}
                       disabled={sendingInterest}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100 transition-all disabled:opacity-50"
+                      className={styles.primaryButton}
                     >
                       {sendingInterest ? <FaSpinner className="animate-spin" size={13} /> : <FaPaperPlane size={13} />}
-                      Interest পাঠান
+                      আগ্রহ প্রকাশ করুন
                     </button>
                   )}
                   {!user?.isPremium && interestSent && !canMessage && (
-                    <span className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 bg-yellow-50 border-yellow-200 text-yellow-700">
-                      <FaPaperPlane size={13} /> Interest পাঠানো হয়েছে
+                    <span className={styles.pendingInterest}>
+                      <FaPaperPlane size={13} /> আগ্রহ প্রকাশ করুনো হয়েছে
                     </span>
                   )}
 
@@ -272,7 +286,7 @@ export default function ProfileDetailPage() {
                     <button
                       onClick={handleStartChat}
                       disabled={startingChat}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border-2 bg-[#1a5276] border-[#1a5276] text-white hover:bg-[#0c3a5e] transition-all disabled:opacity-50"
+                      className={styles.primaryButton}
                     >
                       {startingChat ? <FaSpinner className="animate-spin" size={13} /> : <FaComment size={13} />}
                       বার্তা পাঠান
@@ -282,18 +296,18 @@ export default function ProfileDetailPage() {
               </div>
 
               {/* Key details grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+              <div className={styles.facts}>
                 {[
-                  { icon: <FaMapMarkerAlt />, label: address?.permanentDistrict ? `${address.permanentDistrict}, ${address.permanentDivision}` : null },
+                  { icon: <FaMapMarkerAlt />, label: address?.permanentDistrict ? [address.permanentDistrict, address.permanentDivision].filter(Boolean).join(', ') : null },
                   { icon: <FaGraduationCap />, label: educationLabels[lang]?.[education?.highestLevel] },
                   { icon: <FaBriefcase />, label: professionLabels[lang]?.[profession?.occupationType] },
                   { icon: <FaFlag />, label: maritalStatusLabels[lang]?.[personal?.maritalStatus] },
                   { icon: <FaStar />, label: madhabLabels[lang]?.[religion?.madhab] },
                   { icon: <FaUser />, label: personal?.bloodGroup ? `রক্তের গ্রুপ: ${personal.bloodGroup}` : null },
                 ].filter((i) => i.label).map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="text-[#1a5276] text-xs">{item.icon}</span>
-                    <span className="text-xs text-gray-700 font-medium truncate">{item.label}</span>
+                  <div key={idx} className={styles.fact}>
+                    <span className="text-[#896832] text-xs">{item.icon}</span>
+                    <span className={styles.factValue}>{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -301,9 +315,10 @@ export default function ProfileDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <nav className={styles.sectionNav} aria-label="প্রোফাইলের বিভাগ">{[['personal','ব্যক্তিগত তথ্য'],['religion','ধর্মীয় তথ্য'],['education','শিক্ষা ও পেশা'],['family','পরিবার'],['expectations','প্রত্যাশা'],['contact-info','যোগাযোগ']].map(([anchor,label]) => <a key={anchor} href={`#${anchor}`}>{label}</a>)}</nav>
+        <div className={styles.contentGrid}>
           {/* Main info */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className={styles.details}>
             {/* About */}
             {lifestyle?.aboutSelf && (
               <Section title="নিজের সম্পর্কে">
@@ -332,14 +347,14 @@ export default function ProfileDetailPage() {
             {/* Religion */}
             <Section title="ধর্মীয় তথ্য">
               <InfoRow label="মাযহাব" value={madhabLabels[lang]?.[religion?.madhab]} />
-              <InfoRow label="৫ ওয়াক্ত নামায" value={religion?.praysFiveTimes ? 'হ্যাঁ' : 'না'} />
+              <InfoRow label="৫ ওয়াক্ত নামায" value={typeof religion?.praysFiveTimes === 'boolean' ? (religion.praysFiveTimes ? 'হ্যাঁ' : 'না') : null} />
               {profileUser?.gender === 'female' && (
-                <InfoRow label="পর্দা পালন" value={religion?.wearsPardah ? 'হ্যাঁ' : 'না'} />
+                <InfoRow label="পর্দা পালন" value={typeof religion?.wearsPardah === 'boolean' ? (religion.wearsPardah ? 'হ্যাঁ' : 'না') : null} />
               )}
               {profileUser?.gender === 'male' && (
-                <InfoRow label="দাড়ি" value={religion?.hasBeard ? 'হ্যাঁ' : 'না'} />
+                <InfoRow label="দাড়ি" value={typeof religion?.hasBeard === 'boolean' ? (religion.hasBeard ? 'হ্যাঁ' : 'না') : null} />
               )}
-              <InfoRow label="হারাম বর্জন" value={religion?.avoidsHaram ? 'হ্যাঁ' : 'না'} />
+              <InfoRow label="হারাম বর্জন" value={typeof religion?.avoidsHaram === 'boolean' ? (religion.avoidsHaram ? 'হ্যাঁ' : 'না') : null} />
               <InfoRow label="কুরআন তিলাওয়াত" value={{
                 complete: 'সম্পূর্ণ পারেন',
                 partial: 'আংশিক পারেন',
@@ -388,7 +403,7 @@ export default function ProfileDetailPage() {
               <Section title="শখ ও বিশেষ গুণ">
                 <div className="flex flex-wrap gap-2 mb-3">
                   {lifestyle.hobbies.map((h, i) => (
-                    <span key={i} className="bg-[#1a5276]/10 text-[#1a5276] text-xs px-3 py-1.5 rounded-full font-medium">{h}</span>
+                    <span key={i} className="bg-[#896832]/10 text-[#896832] text-xs px-3 py-1.5 rounded-full font-medium">{h}</span>
                   ))}
                 </div>
                 {lifestyle.specialQualities && <p className="text-sm text-gray-700">{lifestyle.specialQualities}</p>}
@@ -421,11 +436,11 @@ export default function ProfileDetailPage() {
           </div>
 
           {/* Sidebar: Contact info */}
-          <div className="space-y-4">
+          <aside className={styles.sidebar}>
             {/* Contact unlock card */}
-            <div className="card border-2 border-dashed border-[#1a5276]/30 sticky top-24">
-              <h3 className="font-bold text-gray-800 mb-3 text-sm flex items-center gap-2">
-                <FaPhone className="text-[#1a5276]" /> যোগাযোগের তথ্য
+            <div id="contact-info" className={styles.contactCard}>
+              <div className={styles.contactIcon}><FaLock /></div><p className={styles.eyebrow}>পরিচয়ের পরবর্তী ধাপ</p><h3 className={styles.contactTitle}>
+                <FaPhone className="text-[#896832]" /> যোগাযোগের তথ্য
               </h3>
 
               {(hasUnlockedContact || pointUnlocked) ? (
@@ -437,13 +452,13 @@ export default function ProfileDetailPage() {
                     {contact?.phone && (
                       <div className="flex items-center gap-2 text-sm">
                         <FaPhone className="text-gray-400" size={12} />
-                        <a href={`tel:${contact.phone}`} className="text-[#1a5276] font-semibold hover:underline">{contact.phone}</a>
+                        <a href={`tel:${contact.phone}`} className="text-[#896832] font-semibold hover:underline">{contact.phone}</a>
                       </div>
                     )}
                     {contact?.alternatePhone && (
                       <div className="flex items-center gap-2 text-sm mt-1">
                         <FaPhone className="text-gray-400" size={12} />
-                        <a href={`tel:${contact.alternatePhone}`} className="text-[#1a5276] font-semibold hover:underline">{contact.alternatePhone}</a>
+                        <a href={`tel:${contact.alternatePhone}`} className="text-[#896832] font-semibold hover:underline">{contact.alternatePhone}</a>
                       </div>
                     )}
                     {contact?.email && (
@@ -456,7 +471,7 @@ export default function ProfileDetailPage() {
                       <div className="mt-2 pt-2 border-t border-green-100">
                         <p className="text-xs text-gray-500">অভিভাবক: <span className="font-medium text-gray-700">{contact.guardianName} ({contact.guardianRelation})</span></p>
                         {contact.guardianPhone && (
-                          <a href={`tel:${contact.guardianPhone}`} className="text-xs text-[#1a5276] font-medium">{contact.guardianPhone}</a>
+                          <a href={`tel:${contact.guardianPhone}`} className="text-xs text-[#896832] font-medium">{contact.guardianPhone}</a>
                         )}
                       </div>
                     )}
@@ -464,14 +479,14 @@ export default function ProfileDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <div className={styles.lockedInfo}>
                     <FaLock className="mx-auto text-gray-300 mb-2" size={24} />
                     <p className="text-xs text-gray-500">যোগাযোগের তথ্য লক করা আছে।</p>
                   </div>
                   {/* Pay to unlock */}
                   <button
                     onClick={() => setShowPayment(true)}
-                    className="w-full btn-gold py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm"
+                    className={styles.unlockButton}
                   >
                     <FaLock size={12} /> ৫০ টাকায় আনলক করুন
                   </button>
@@ -487,7 +502,7 @@ export default function ProfileDetailPage() {
                     disabled={pointUnlocking || userPoints < 100}
                     className={`w-full py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold border-2 transition-all ${
                       userPoints >= 100
-                        ? 'border-[#1a5276] text-[#1a5276] hover:bg-[#1a5276] hover:text-white'
+                        ? 'border-[#896832] text-[#896832] hover:bg-[#896832] hover:text-white'
                         : 'border-gray-200 text-gray-400 cursor-not-allowed'
                     } disabled:opacity-60`}
                   >
@@ -498,14 +513,14 @@ export default function ProfileDetailPage() {
                     )}
                     ১০০ পয়েন্টে আনলক করুন
                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ml-1 ${
-                      userPoints >= 100 ? 'bg-[#1a5276]/10 text-[#1a5276]' : 'bg-gray-100 text-gray-500'
+                      userPoints >= 100 ? 'bg-[#896832]/10 text-[#896832]' : 'bg-gray-100 text-gray-500'
                     }`}>
                       {userPoints} পয়েন্ট
                     </span>
                   </button>
                   {userPoints < 100 && (
                     <p className="text-center text-xs text-gray-400">
-                      <Link href="/referral" className="text-[#1a5276] font-semibold hover:underline">
+                      <Link href="/referral" className="text-[#896832] font-semibold hover:underline">
                         রেফারেল করে পয়েন্ট উপার্জন করুন →
                       </Link>
                     </p>
@@ -514,6 +529,7 @@ export default function ProfileDetailPage() {
               )}
             </div>
 
+            <div className={styles.trustNote}><FaShieldAlt /><div><strong>আস্থার সঙ্গে এগিয়ে যান</strong><p>পরিবারকে সঙ্গে নিয়ে পরিচিত হোন। সিদ্ধান্ত নেওয়ার আগে তথ্য যাচাই করুন।</p></div></div>
             {/* Report */}
             <button
               onClick={() => setShowReport(true)}
@@ -521,10 +537,20 @@ export default function ProfileDetailPage() {
             >
               <FaExclamationTriangle size={10} /> এই প্রোফাইল রিপোর্ট করুন
             </button>
-          </div>
+          </aside>
         </div>
       </div>
 
+      <Dialog open={showReport} onClose={() => { if (!reporting) setShowReport(false); }} className={styles.reportDialog}>
+        <div className={styles.reportBackdrop} aria-hidden="true" /><div className={styles.reportViewport}><Dialog.Panel className={styles.reportPanel}>
+          <div className={styles.reportHeading}><Dialog.Title>প্রোফাইল সম্পর্কে অভিযোগ</Dialog.Title><button aria-label="বন্ধ করুন" disabled={reporting} onClick={() => setShowReport(false)}><FaTimes /></button></div>
+          <form onSubmit={async event => { event.preventDefault(); setReporting(true); setReportError(''); const form = new FormData(event.currentTarget); try { await userAPI.reportUser({ reportedUserId: profileUser?._id, reason: form.get('reason'), description: form.get('description') }); toast.success('অভিযোগ জমা দেওয়া হয়েছে।'); setShowReport(false); } catch (error) { setReportError(error.response?.data?.messageBn || error.response?.data?.message || 'অভিযোগ পাঠানো যায়নি।'); } finally { setReporting(false); } }}>
+            <label>অভিযোগের কারণ<select name="reason" required defaultValue=""><option value="" disabled>নির্বাচন করুন</option><option value="fake_profile">ভুয়া প্রোফাইল</option><option value="inappropriate_content">অনুপযুক্ত তথ্য</option><option value="harassment">হয়রানি</option><option value="spam">স্প্যাম</option><option value="scam">প্রতারণা</option><option value="other">অন্যান্য</option></select></label>
+            <label>বিস্তারিত<textarea name="description" rows={4} maxLength={500} placeholder="আপনার অভিযোগ সংক্ষেপে লিখুন" /></label>
+            {reportError && <p role="alert">{reportError}</p>}<button className={styles.primaryButton} disabled={reporting}>{reporting ? 'পাঠানো হচ্ছে…' : 'অভিযোগ জমা দিন'}</button>
+          </form>
+        </Dialog.Panel></div>
+      </Dialog>
       {/* Payment Modal */}
       {showPayment && (
         <PaymentModal
